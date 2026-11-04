@@ -1,0 +1,5 @@
+{
+    "require-dev": {
+        "edneymatias/antigravity-laravel-kit": "^1.3"
+    }
+}

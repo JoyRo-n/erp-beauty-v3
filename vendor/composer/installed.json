@@ -1,0 +1,72 @@
+{
+    "packages": [
+        {
+            "name": "edneymatias/antigravity-laravel-kit",
+            "version": "v1.3.0",
+            "version_normalized": "1.3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/edneymatias/antigravity-laravel-kit.git",
+                "reference": "3f5c86b8ad32e496830416599837ed1c622631d0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/edneymatias/antigravity-laravel-kit/zipball/3f5c86b8ad32e496830416599837ed1c622631d0",
+                "reference": "3f5c86b8ad32e496830416599837ed1c622631d0",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0",
+                "pestphp/pest": "^2.0|^3.0"
+            },
+            "time": "2026-02-06T01:16:09+00:00",
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Antigravity\\LaravelKit\\AntigravityServiceProvider"
+                    ]
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Antigravity\\LaravelKit\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Edney Matias"
+                }
+            ],
+            "description": "AI Agent templates for Laravel development - Skills, Agents, and Workflows for enhanced coding assistance",
+            "homepage": "https://github.com/edneymatias/antigravity-laravel-kit",
+            "keywords": [
+                "Agent",
+                "Gemini",
+                "ai",
+                "antigravity",
+                "laravel",
+                "livewire",
+                "skills",
+                "templates"
+            ],
+            "support": {
+                "issues": "https://github.com/edneymatias/antigravity-laravel-kit/issues",
+                "source": "https://github.com/edneymatias/antigravity-laravel-kit"
+            },
+            "install-path": "../edneymatias/antigravity-laravel-kit"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": [
+        "edneymatias/antigravity-laravel-kit"
+    ]
+}
