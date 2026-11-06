@@ -30,7 +30,7 @@ class BaselineSeeder extends Seeder
         DB::statement('PRAGMA foreign_keys = OFF;');
 
         $tables = [
-            'users', 'log_notes', 'audit_logs', 'return_lines', 'returns',
+            'users', 'log_notes', 'audit_logs', 'access_grants', 'app_notifications', 'return_lines', 'returns',
             'internal_transfers', 'payments', 'vendor_bill_lines', 'vendor_bills',
             'purchase_receipt_lines', 'purchase_receipts', 'purchase_order_lines',
             'purchase_orders', 'customer_invoice_lines', 'customer_invoices',
@@ -40,6 +40,10 @@ class BaselineSeeder extends Seeder
             'stock_moves', 'stock_quants', 'warehouses_locations',
             'vendor_pricelists', 'products', 'contacts'
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('access_requests')) {
+            $tables[] = 'access_requests';
+        }
 
         foreach ($tables as $tbl) {
             DB::table($tbl)->truncate();

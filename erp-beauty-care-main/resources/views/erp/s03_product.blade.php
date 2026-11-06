@@ -33,7 +33,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Variant SKU (SR-13 Unique)</label>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Variant SKU</label>
                 <div class="p-2 bg-gray-50 rounded border text-gray-800 font-mono font-bold">{{ $selectedProduct->variant_sku }}</div>
             </div>
             <div>
@@ -99,7 +99,7 @@
         <div class="mt-8 border-t pt-6">
             <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
                 <i class="fa-solid fa-box-archive text-amber-600 mr-2"></i>
-                Tambah Produk / Varian SKU Baru (SR-13 Unique SKU Enforcement)
+                Tambah Produk / Varian SKU Baru
             </h3>
             <form action="{{ route('s03.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 @csrf

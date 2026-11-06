@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Purchase Order</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Locked Upon Confirmation (SR-21 / DL-18)</span>
+            <span class="text-xs text-gray-500">Locked Upon Confirmation</span>
         </div>
         <form method="GET" action="{{ route('s10.purchase') }}">
             <select name="po" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -43,15 +43,31 @@
             </div>
 
             <div class="flex items-center space-x-2">
+                @php
+                    $canOpenRec = in_array($user->role, ['Admin', 'Owner', 'Warehouse', 'Inventory']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Purchase Receipt');
+                    $canOpenBill = in_array($user->role, ['Admin', 'Owner', 'Finance', 'Purchasing']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Vendor Bill');
+                @endphp
                 @if($selectedOrder && $selectedOrder->receipts->count() > 0)
-                    <a href="{{ route('s11.receipt', ['rec' => $selectedOrder->receipts->first()->receipt_number]) }}" class="px-3 py-1.5 rounded bg-blue-50 border border-blue-300 text-blue-800 text-xs font-bold hover:bg-blue-100">
-                        <i class="fa-solid fa-box-open mr-1"></i> Receipt ({{ $selectedOrder->receipts->count() }})
-                    </a>
+                    @if($canOpenRec)
+                        <a href="{{ route('s11.receipt', ['rec' => $selectedOrder->receipts->first()->receipt_number]) }}" class="px-3 py-1.5 rounded bg-blue-50 border border-blue-300 text-blue-800 text-xs font-bold hover:bg-blue-100">
+                            <i class="fa-solid fa-box-open mr-1"></i> Receipt ({{ $selectedOrder->receipts->count() }})
+                        </a>
+                    @else
+                        <span class="px-3 py-1.5 rounded bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold">
+                            <i class="fa-solid fa-box-open mr-1"></i> Receipt: {{ $selectedOrder->receipts->first()->receipt_number }}
+                        </span>
+                    @endif
                 @endif
                 @if($selectedOrder && $selectedOrder->bills->count() > 0)
-                    <a href="{{ route('s12.bill', ['bill' => $selectedOrder->bills->first()->bill_number]) }}" class="px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 text-xs font-bold hover:bg-teal-100">
-                        <i class="fa-solid fa-file-invoice mr-1"></i> Vendor Bill ({{ $selectedOrder->bills->count() }})
-                    </a>
+                    @if($canOpenBill)
+                        <a href="{{ route('s12.bill', ['bill' => $selectedOrder->bills->first()->bill_number]) }}" class="px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 text-xs font-bold hover:bg-teal-100">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> Vendor Bill ({{ $selectedOrder->bills->count() }})
+                        </a>
+                    @else
+                        <span class="px-3 py-1.5 rounded bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> Bill: {{ $selectedOrder->bills->first()->bill_number }}
+                        </span>
+                    @endif
                 @endif
             </div>
         </div>
@@ -71,7 +87,7 @@
                     <div class="p-2 bg-gray-50 rounded border text-gray-800">{{ $selectedOrder->payment_terms }}</div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Lock Status (SR-21)</label>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Lock Status</label>
                     <div class="p-2 bg-gray-50 rounded border text-purple-700 font-bold flex items-center">
                         <i class="fa-solid fa-lock mr-1.5 text-purple-500"></i> Locked after Confirmed
                     </div>
@@ -123,45 +139,51 @@
             </div>
         @endif
 
-        <!-- Create New PO Form -->
-        <div class="mt-8 border-t pt-6">
-            <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <i class="fa-solid fa-cart-shopping text-blue-600 mr-2"></i>
-                Create New Purchase Order (Testing F-12 & SR-21)
-            </h3>
-            <form action="{{ route('s10.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                @csrf
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Vendor</label>
-                    <select name="vendor_id" class="w-full border rounded p-1.5 bg-white">
-                        @foreach($vendors as $v)
-                            <option value="{{ $v->id }}" {{ $v->id === 'V01' ? 'selected' : '' }}>
-                                {{ $v->id }} — {{ $v->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Product SKU</label>
-                    <select name="variant_sku" class="w-full border rounded p-1.5 bg-white">
-                        @foreach($products as $p)
-                            <option value="{{ $p->variant_sku }}" {{ $p->variant_sku === 'BC-TON-100' ? 'selected' : '' }}>
-                                {{ $p->variant_sku }} — {{ $p->name }} (Cost: Rp{{ number_format($p->cost, 0, ',', '.') }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Qty Ordered</label>
-                    <input type="number" name="qty_ordered" value="5" min="1" class="w-full border rounded p-1.5 bg-white">
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded shadow">
-                        <i class="fa-solid fa-check mr-1"></i> Confirm PO
-                    </button>
-                </div>
-            </form>
-        </div>
+        <!-- Create New PO Form (Purchasing / Superuser / Granted) -->
+        @if($canCreatePo ?? true)
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-cart-shopping text-blue-600 mr-2"></i>
+                    Create New Purchase Order
+                </h3>
+                <form action="{{ route('s10.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    @csrf
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Vendor</label>
+                        <select name="vendor_id" class="w-full border rounded p-1.5 bg-white">
+                            @foreach($vendors as $v)
+                                <option value="{{ $v->id }}" {{ $v->id === 'V01' ? 'selected' : '' }}>
+                                    {{ $v->id }} — {{ $v->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Product SKU</label>
+                        <select name="variant_sku" class="w-full border rounded p-1.5 bg-white">
+                            @foreach($products as $p)
+                                <option value="{{ $p->variant_sku }}" {{ $p->variant_sku === 'BC-TON-100' ? 'selected' : '' }}>
+                                    {{ $p->variant_sku }} — {{ $p->name }} (Cost: Rp{{ number_format($p->cost, 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Qty Ordered</label>
+                        <input type="number" name="qty_ordered" value="5" min="1" class="w-full border rounded p-1.5 bg-white">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded shadow">
+                            <i class="fa-solid fa-check mr-1"></i> Confirm PO
+                        </button>
+                    </div>
+                </form>
+            </div>
+        @else
+            <div class="mt-6 border-t pt-4 text-xs text-gray-500 italic">
+                <i class="fa-solid fa-eye mr-1 text-gray-400"></i> Mode Tinjau (Read-Only): Konfirmasi Purchase Order baru dilakukan oleh divisi Purchasing.
+            </div>
+        @endif
     </div>
 
     <!-- Chatter -->

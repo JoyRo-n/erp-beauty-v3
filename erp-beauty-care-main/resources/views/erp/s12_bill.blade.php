@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Vendor Bill & Three-Way Match</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Bill Qty Capped by Accepted Qty (SR-05 / SR-06 / DL-03)</span>
+            <span class="text-xs text-gray-500">Bill Qty Capped by Accepted Qty</span>
         </div>
         <form method="GET" action="{{ route('s12.bill') }}">
             <select name="bill" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -43,17 +43,23 @@
             </div>
 
             <div class="flex items-center space-x-2">
-                @if($selectedBill && $selectedBill->status === 'Draft')
-                    <form action="{{ route('s12.post', $selectedBill->bill_number) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 rounded bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow">
-                            <i class="fa-solid fa-stamp mr-1"></i> Post Vendor Bill (Finance)
-                        </button>
-                    </form>
-                @elseif($selectedBill && $selectedBill->status === 'Posted' && $selectedBill->open_amount > 0)
-                    <a href="{{ route('s19.vendor_payment', ['bill' => $selectedBill->bill_number]) }}" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
-                        <i class="fa-solid fa-money-bill-transfer mr-1"></i> Pay Bill (S-19)
-                    </a>
+                @if($canPostBill ?? false)
+                    @if($selectedBill && $selectedBill->status === 'Draft')
+                        <form action="{{ route('s12.post', $selectedBill->bill_number) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 rounded bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow">
+                                <i class="fa-solid fa-stamp mr-1"></i> Post Vendor Bill (Finance)
+                            </button>
+                        </form>
+                    @elseif($selectedBill && $selectedBill->status === 'Posted' && $selectedBill->open_amount > 0)
+                        <a href="{{ route('s19.vendor_payment', ['bill' => $selectedBill->bill_number]) }}" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
+                            <i class="fa-solid fa-money-bill-transfer mr-1"></i> Pay Bill (S-19)
+                        </a>
+                    @endif
+                @elseif($selectedBill)
+                    <span class="px-3 py-1.5 rounded bg-gray-100 text-gray-600 text-xs font-medium border">
+                        <i class="fa-solid fa-lock mr-1 text-gray-400"></i> Posting hanya oleh Finance
+                    </span>
                 @endif
             </div>
         </div>

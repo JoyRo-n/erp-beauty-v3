@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Receipt & Quality Acceptance</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Only Accepted Qty Adds to Stock & AP (SR-06 / DL-03)</span>
+            <span class="text-xs text-gray-500">Only Accepted Qty Adds to Stock & AP</span>
         </div>
         <form method="GET" action="{{ route('s11.receipt') }}">
             <select name="rec" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -42,7 +42,7 @@
             @if($selectedReceipt && $selectedReceipt->status !== 'Done')
                 <div>
                     <button type="submit" form="form-validate-receipt" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
-                        <i class="fa-solid fa-clipboard-check mr-1"></i> Validate Receipt & Quality (F-13)
+                        <i class="fa-solid fa-clipboard-check mr-1"></i> Validate Receipt & Quality
                     </button>
                 </div>
             @endif
@@ -114,6 +114,8 @@
                     </table>
                 </div>
             </form>
+        @else
+            <div class="text-center py-8 text-gray-400 italic">No purchase receipts available yet. Confirm a Purchase Order first.</div>
         @endif
     </div>
 

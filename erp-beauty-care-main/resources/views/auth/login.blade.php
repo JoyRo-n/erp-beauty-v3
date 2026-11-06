@@ -40,9 +40,17 @@
             <span class="font-bold text-sm tracking-wide">PT Arunika Beauty Nusantara</span>
             <span class="text-xs text-purple-200 opacity-80 hidden sm:inline">&bull; NusaGlow ERP Web App</span>
         </div>
-        <div class="text-xs text-purple-100 flex items-center space-x-2">
-            <i class="fa-solid fa-lock text-xs"></i>
-            <span class="font-semibold">SR-19 Access Control & Security</span>
+        <div class="text-xs text-purple-100 flex items-center space-x-3">
+            @if(!empty($currentUser))
+                <a href="{{ $returnUrl ?? route('s01.home') }}" class="bg-white/20 hover:bg-white/30 text-white font-semibold px-3 py-1 rounded transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-arrow-left text-[11px]"></i>
+                    <span>Kembali ke {{ $currentUser->role }}</span>
+                </a>
+            @endif
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-lock text-xs"></i>
+                <span class="font-semibold">Access Control & Security</span>
+            </div>
         </div>
     </header>
 
@@ -92,8 +100,26 @@
                     </div>
                 @endif
 
+                @if(!empty($currentUser))
+                    <div class="mb-5 p-3.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-center justify-between gap-3">
+                        <div>
+                            <div class="font-bold flex items-center space-x-1.5">
+                                <i class="fa-solid fa-user-shield text-purple-700"></i>
+                                <span>Mode Inspeksi: {{ $currentUser->name }} ({{ $currentUser->role }})</span>
+                            </div>
+                            <div class="text-[11px] text-purple-700 mt-0.5">Salah pilih akun staf? Kembali tanpa mengakhiri sesi {{ $currentUser->role }} Anda.</div>
+                        </div>
+                        <a href="{{ $returnUrl ?? route('s01.home') }}" class="flex-shrink-0 bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>Kembali</span>
+                        </a>
+                    </div>
+                @endif
+
                 <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
                     @csrf
+                    <input type="hidden" name="target_role" value="{{ $targetRole ?? '' }}">
+                    <input type="hidden" name="inspect" value="{{ !empty($isInspect) ? '1' : '0' }}">
                     
                     <!-- Email Field -->
                     <div>

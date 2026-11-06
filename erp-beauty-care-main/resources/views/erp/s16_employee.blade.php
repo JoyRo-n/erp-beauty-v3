@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Employees & Skill Matrix</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Service Assignment Verification (SR-17 / DL-14)</span>
+            <a href="{{ route('s17.treatment') }}" class="text-xs text-purple-700 hover:underline font-medium">Beauty Treatments</a>
         </div>
         <form method="GET" action="{{ route('s16.employee') }}">
             <select name="emp" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -53,7 +53,7 @@
                     <div class="p-2 bg-gray-50 rounded border text-gray-800">{{ $selectedEmployee->job_position }}</div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Skill Matrix (SR-17)</label>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Skill Matrix</label>
                     <div class="p-2 bg-purple-50 rounded border border-purple-200 text-purple-900 font-bold flex flex-wrap gap-1">
                         @php $skills = is_array($selectedEmployee->skills) ? $selectedEmployee->skills : explode(';', $selectedEmployee->skills); @endphp
                         @foreach($skills as $s)
@@ -112,7 +112,7 @@
         <div class="mt-8 border-t pt-6">
             <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
                 <i class="fa-solid fa-user-plus text-rose-600 mr-2"></i>
-                Registrasi Karyawan & Matriks Keahlian Baru (SR-17 & SR-22)
+                Registrasi Karyawan & Matriks Keahlian Baru
             </h3>
             <form action="{{ route('s16.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 @csrf

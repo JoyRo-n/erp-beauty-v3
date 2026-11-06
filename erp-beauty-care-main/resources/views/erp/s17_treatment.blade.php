@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Beauty Treatment Completion</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Consumes 1 BC-MSK-001 at ST-BDG (SR-18 / DL-15)</span>
+            <span class="text-xs text-gray-500">Consumes 1 BC-MSK-001 at ST-BDG</span>
         </div>
         <form method="GET" action="{{ route('s17.treatment') }}">
             <select name="trt" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -40,21 +40,36 @@
             </div>
 
             <div class="flex items-center space-x-2">
+                @php
+                    $canOpenInv = in_array($user->role, ['Admin', 'Owner', 'Finance']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Customer Invoice');
+                @endphp
                 @if($selectedTreatment && $selectedTreatment->status !== 'Done')
-                    <form action="{{ route('s17.complete', $selectedTreatment->treatment_number) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
-                            <i class="fa-solid fa-sparkles mr-1"></i> Complete Treatment (F-20)
-                        </button>
-                    </form>
+                    @if($canManageTreatment ?? false)
+                        <form action="{{ route('s17.complete', $selectedTreatment->treatment_number) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
+                                <i class="fa-solid fa-sparkles mr-1"></i> Complete Treatment
+                            </button>
+                        </form>
+                    @else
+                        <span class="px-3 py-1.5 rounded bg-gray-100 text-gray-600 text-xs font-medium border">
+                            <i class="fa-solid fa-lock mr-1 text-gray-400"></i> Penyelesaian hanya oleh Studio
+                        </span>
+                    @endif
                 @elseif($selectedTreatment && $selectedTreatment->status === 'Done')
                     <span class="text-xs px-3 py-1.5 rounded bg-emerald-100 text-emerald-800 font-bold">
                         <i class="fa-solid fa-circle-check mr-1"></i> Treatment Completed & Mask Deducted
                     </span>
                     @if($selectedTreatment->invoice_id)
-                        <a href="{{ route('s08.invoice', ['inv' => $selectedTreatment->invoice_id]) }}" class="text-xs px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 font-bold hover:bg-teal-100">
-                            <i class="fa-solid fa-file-invoice mr-1"></i> View Invoice #{{ $selectedTreatment->invoice_id }}
-                        </a>
+                        @if($canOpenInv)
+                            <a href="{{ route('s08.invoice', ['inv' => $selectedTreatment->invoice_id]) }}" class="text-xs px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 font-bold hover:bg-teal-100">
+                                <i class="fa-solid fa-file-invoice mr-1"></i> View Invoice #{{ $selectedTreatment->invoice_id }}
+                            </a>
+                        @else
+                            <span class="text-xs px-3 py-1.5 rounded bg-teal-50 border border-teal-200 text-teal-800 font-bold">
+                                <i class="fa-solid fa-file-invoice mr-1"></i> Invoice #{{ $selectedTreatment->invoice_id }}
+                            </span>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -101,57 +116,62 @@
                 </div>
             </div>
         @else
-            <!-- Form to create demo treatment for C004 and E001 (T-33 setup) -->
             <div class="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                 <div class="w-12 h-12 mx-auto rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xl mb-3">
                     <i class="fa-solid fa-spa"></i>
                 </div>
-                <h4 class="font-bold text-gray-800 text-sm mb-1">Inisialisasi Layanan Treatment (S-17 / T-33)</h4>
-                <p class="text-gray-500 text-xs mb-4">Klik tombol di bawah untuk membuat dan langsung menyelesaikan layanan Glow Facial untuk Rani Kartika (C004) dengan terapis Sinta Maharani (E001).</p>
-                <form action="{{ route('s17.complete', 'TRT/2026/00007') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition">
-                        <i class="fa-solid fa-sparkles mr-1.5"></i> Selesaikan Treatment TRT/2026/00007 (T-33)
-                    </button>
-                </form>
+                <h4 class="font-bold text-gray-800 text-sm mb-1">Belum Ada Layanan Treatment</h4>
+                @if($canManageTreatment ?? false)
+                    <p class="text-gray-500 text-xs mb-4">Klik tombol di bawah untuk membuat dan menyelesaikan layanan Glow Facial untuk Rani Kartika (C004) dengan terapis Sinta Maharani (E001), atau jadwalkan layanan baru di formulir bawah.</p>
+                    <form action="{{ route('s17.complete', 'TRT/2026/00007') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition">
+                            <i class="fa-solid fa-sparkles mr-1.5"></i> Selesaikan Treatment TRT/2026/00007
+                        </button>
+                    </form>
+                @else
+                    <p class="text-gray-500 text-xs">Belum ada layanan treatment yang dijadwalkan atau diselesaikan oleh tim Studio.</p>
+                @endif
             </div>
         @endif
 
-        <!-- Form Tambah Treatment Baru (Interactive Scheduling) -->
-        <div class="mt-8 border-t pt-6">
-            <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <i class="fa-solid fa-calendar-plus text-purple-600 mr-2"></i>
-                Jadwalkan Layanan Treatment Baru (Glow Facial)
-            </h3>
-            <form action="{{ route('s17.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
-                @csrf
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Pelanggan (Customer)</label>
-                    <select name="customer_id" class="w-full border rounded p-1.5 bg-white focus:outline-none">
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}" {{ $c->id === 'C004' ? 'selected' : '' }}>
-                                {{ $c->id }} - {{ $c->name }} ({{ $c->city }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Terapis Bertugas (SR-17: Wajib Skill Facial)</label>
-                    <select name="employee_id" class="w-full border rounded p-1.5 bg-white focus:outline-none">
-                        @foreach($employees as $emp)
-                            <option value="{{ $emp->id }}" {{ $emp->id === 'E001' ? 'selected' : '' }}>
-                                {{ $emp->id }} - {{ $emp->name }} ({{ is_array($emp->skills) ? implode(', ', $emp->skills) : $emp->skills }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow transition">
-                        <i class="fa-solid fa-plus mr-1"></i> Buat Treatment (Draft)
-                    </button>
-                </div>
-            </form>
-        </div>
+        <!-- Form Tambah Treatment Baru (Studio / Superuser / Granted) -->
+        @if($canManageTreatment ?? false)
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-calendar-plus text-purple-600 mr-2"></i>
+                    Jadwalkan Layanan Treatment Baru (Glow Facial)
+                </h3>
+                <form action="{{ route('s17.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    @csrf
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Pelanggan (Customer)</label>
+                        <select name="customer_id" class="w-full border rounded p-1.5 bg-white focus:outline-none">
+                            @foreach($customers as $c)
+                                <option value="{{ $c->id }}" {{ $c->id === 'C004' ? 'selected' : '' }}>
+                                    {{ $c->id }} - {{ $c->name }} ({{ $c->city }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Terapis Bertugas (Wajib Skill Facial)</label>
+                        <select name="employee_id" class="w-full border rounded p-1.5 bg-white focus:outline-none">
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}" {{ $emp->id === 'E001' ? 'selected' : '' }}>
+                                    {{ $emp->id }} - {{ $emp->name }} ({{ is_array($emp->skills) ? implode(', ', $emp->skills) : $emp->skills }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Buat Treatment (Draft)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        @endif
     </div>
 
     <!-- Chatter -->

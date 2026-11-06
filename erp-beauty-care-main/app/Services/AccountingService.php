@@ -91,13 +91,28 @@ class AccountingService
      */
     public static function postCustomerInvoice(CustomerInvoice $invoice): CustomerInvoice
     {
-        if ($invoice->status === 'Posted') {
+        if ($invoice->status === 'Posted' || $invoice->status === 'Paid') {
             return $invoice; // Idempotent
         }
 
         return DB::transaction(function () use ($invoice) {
+            // Enforce delivery-based invoicing for product orders
+            if ($invoice->source_doc_type !== 'Treatment' && $invoice->salesOrder) {
+                foreach ($invoice->lines as $line) {
+                    if ($line->item_type === 'product') {
+                        $soLine = $invoice->salesOrder->lines()->where('variant_sku', $line->item_code)->first();
+                        if ($soLine && ($soLine->invoiced_qty + $line->qty) > $soLine->delivered_qty) {
+                            AuditService::log('Invoice Blocked', 'Customer Invoice', $invoice->invoice_number, "Invoice qty {$line->qty} exceeds uninvoiced delivered qty ({$soLine->delivered_qty} delivered, {$soLine->invoiced_qty} invoiced)");
+                            throw new Exception('Cannot invoice undelivered quantities');
+                        }
+                    }
+                }
+            }
+
             $entryNumber = 'JE/INV/' . substr($invoice->invoice_number, -5);
             $reference = $invoice->delivery_order_number ?: $invoice->invoice_number;
+            $revenueAccount = $invoice->source_doc_type === 'Treatment' ? '4010' : '4000';
+            $revenueDesc = $invoice->source_doc_type === 'Treatment' ? 'Service Revenue' : 'Sales Revenue';
 
             $items = [
                 [
@@ -107,10 +122,10 @@ class AccountingService
                     'description' => 'Customer Invoice ' . $invoice->invoice_number,
                 ],
                 [
-                    'account_code' => '4000', // Sales Revenue
+                    'account_code' => $revenueAccount,
                     'debit' => 0,
                     'credit' => (float) $invoice->untaxed_amount,
-                    'description' => 'Sales Revenue',
+                    'description' => $revenueDesc,
                 ],
                 [
                     'account_code' => '2150', // Output VAT
@@ -130,6 +145,17 @@ class AccountingService
                 'Finance User'
             );
 
+            if ($invoice->source_doc_type !== 'Treatment' && $invoice->salesOrder) {
+                foreach ($invoice->lines as $line) {
+                    if ($line->item_type === 'product') {
+                        $soLine = $invoice->salesOrder->lines()->where('variant_sku', $line->item_code)->first();
+                        if ($soLine) {
+                            $soLine->increment('invoiced_qty', $line->qty);
+                        }
+                    }
+                }
+            }
+
             $invoice->update([
                 'status' => 'Posted',
                 'open_amount' => $invoice->total_amount,
@@ -146,11 +172,20 @@ class AccountingService
      */
     public static function postVendorBill(VendorBill $bill): VendorBill
     {
-        if ($bill->status === 'Posted') {
+        if ($bill->status === 'Posted' || $bill->status === 'Paid') {
             return $bill; // Idempotent
         }
 
         return DB::transaction(function () use ($bill) {
+            // Enforce three-way match against accepted quantity
+            foreach ($bill->lines as $line) {
+                $maxBillable = $line->accepted_qty - $line->already_billed_qty;
+                if ($line->bill_qty > $maxBillable) {
+                    AuditService::log('Vendor Bill Blocked', 'Vendor Bill', $bill->bill_number, "Attempted to bill {$line->bill_qty} units when only {$maxBillable} unbilled accepted units exist");
+                    throw new Exception('Bill quantity cannot exceed accepted quantity');
+                }
+            }
+
             $entryNumber = 'JE/BILL/' . substr($bill->bill_number, -5);
             $reference = $bill->po_number;
 
@@ -184,6 +219,15 @@ class AccountingService
                 date('Y-m-d'),
                 'Finance User'
             );
+
+            if ($bill->purchaseOrder) {
+                foreach ($bill->lines as $line) {
+                    $poLine = $bill->purchaseOrder->lines()->where('variant_sku', $line->variant_sku)->first();
+                    if ($poLine) {
+                        $poLine->increment('qty_billed', $line->bill_qty);
+                    }
+                }
+            }
 
             $bill->update([
                 'status' => 'Posted',

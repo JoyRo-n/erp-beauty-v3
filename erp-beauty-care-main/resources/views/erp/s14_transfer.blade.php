@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Internal Stock Transfer</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Valuation Remains Constant (SR-14 / DL-11)</span>
+            <span class="text-xs text-gray-500">Valuation Remains Constant</span>
         </div>
     </div>
 

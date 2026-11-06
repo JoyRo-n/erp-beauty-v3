@@ -7,10 +7,20 @@
 <div class="space-y-4">
     <!-- Control Panel -->
     <div class="bg-white border border-gray-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Stock Overview & Reservation</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Available = On Hand - Reserved (SR-04)</span>
+            <a href="{{ route('s03.product') }}" class="text-xs text-purple-700 hover:underline font-medium">Products</a>
+            @if(in_array($user->role, ['Admin', 'Owner', 'Warehouse', 'Inventory']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order'))
+                <span class="text-gray-300">&bull;</span>
+                <a href="{{ route('s07.delivery') }}" class="text-xs text-purple-700 hover:underline font-medium">Deliveries</a>
+                <span class="text-gray-300">&bull;</span>
+                <a href="{{ route('s11.receipt') }}" class="text-xs text-purple-700 hover:underline font-medium">Receipts</a>
+                <span class="text-gray-300">&bull;</span>
+                <a href="{{ route('s14.transfer') }}" class="text-xs text-purple-700 hover:underline font-medium">Transfers</a>
+                <span class="text-gray-300">&bull;</span>
+                <a href="{{ route('s10.purchase') }}" class="text-xs text-purple-700 hover:underline font-medium">POs</a>
+            @endif
         </div>
         <div class="flex items-center space-x-4 text-xs">
             <span class="px-2.5 py-1 rounded bg-blue-50 border border-blue-200 text-blue-800">

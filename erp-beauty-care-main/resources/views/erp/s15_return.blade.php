@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Customer Return & Credit Note</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Reverse Stock, COGS & AR (SR-10 / DL-07)</span>
+            <span class="text-xs text-gray-500">Reverse Stock, COGS & AR</span>
         </div>
         <form method="GET" action="{{ route('s15.return') }}">
             <select name="ret" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -70,48 +70,58 @@
                     </tbody>
                 </table>
             </div>
+        @else
+            <div class="text-center py-8 text-gray-400 italic">No customer returns processed yet.</div>
         @endif
 
-        <!-- Process New Return Form -->
-        <div class="mt-8 border-t pt-6">
-            <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <i class="fa-solid fa-arrow-rotate-left text-purple-600 mr-2"></i>
-                Process Customer Return & Credit Note (Testing DL-07 / T-29 & T-30)
-            </h3>
-            <form action="{{ route('s15.process') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                @csrf
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Origin Invoice</label>
-                    <select name="origin_invoice_number" class="w-full border rounded p-1.5 bg-white font-mono">
-                        @foreach($invoices as $inv)
-                            <option value="{{ $inv->invoice_number }}" {{ $inv->invoice_number === 'INV/2026/00007' ? 'selected' : '' }}>
-                                {{ $inv->invoice_number }} ({{ $inv->customer->name ?? $inv->customer_id }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Variant SKU</label>
-                    <input type="text" name="variant_sku" value="BC-CLN-100" class="w-full border rounded p-1.5 bg-white font-mono font-bold">
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Return Qty (Max delivered)</label>
-                    <input type="number" name="return_qty" value="1" min="1" class="w-full border rounded p-1.5 bg-white font-bold">
-                </div>
-                <div>
-                    <label class="block font-medium text-gray-600 mb-1">Quality Inspection</label>
-                    <select name="inspection_status" class="w-full border rounded p-1.5 bg-white font-semibold">
-                        <option value="Sealed / Accepted" selected>Sealed / Accepted (Restores Stock)</option>
-                        <option value="Damaged / Rejected">Damaged / Rejected (No Stock Restore)</option>
-                    </select>
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow">
-                        <i class="fa-solid fa-receipt mr-1"></i> Issue Credit Note
-                    </button>
-                </div>
-            </form>
-        </div>
+        <!-- Process New Return Form (Warehouse / Finance / Superuser) -->
+        @if($canProcessReturn ?? false)
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-arrow-rotate-left text-purple-600 mr-2"></i>
+                    Process Customer Return & Credit Note
+                </h3>
+                <form action="{{ route('s15.process') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                    @csrf
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Origin Invoice</label>
+                        <select name="origin_invoice_number" class="w-full border rounded p-1.5 bg-white font-mono">
+                            @forelse($invoices as $inv)
+                                <option value="{{ $inv->invoice_number }}" {{ $inv->invoice_number === 'INV/2026/00007' ? 'selected' : '' }}>
+                                    {{ $inv->invoice_number }} ({{ $inv->customer->name ?? $inv->customer_id }})
+                                </option>
+                            @empty
+                                <option value="">-- Belum ada faktur terbit --</option>
+                            @endforelse
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Variant SKU</label>
+                        <input type="text" name="variant_sku" value="BC-CLN-100" class="w-full border rounded p-1.5 bg-white font-mono font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Return Qty (Max delivered)</label>
+                        <input type="number" name="return_qty" value="1" min="1" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-600 mb-1">Quality Inspection</label>
+                        <select name="inspection_status" class="w-full border rounded p-1.5 bg-white font-semibold">
+                            <option value="Sealed / Accepted" selected>Sealed / Accepted (Restores Stock)</option>
+                            <option value="Damaged / Rejected">Damaged / Rejected (No Stock Restore)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow">
+                            <i class="fa-solid fa-receipt mr-1"></i> Issue Credit Note
+                        </button>
+                    </div>
+                </form>
+            </div>
+        @else
+            <div class="mt-6 border-t pt-4 text-xs text-gray-500 italic">
+                <i class="fa-solid fa-eye mr-1 text-gray-400"></i> Mode Tinjau (Read-Only): Inspeksi fisik retur dan penerbitan Credit Note diproses oleh Warehouse &amp; Finance.
+            </div>
+        @endif
     </div>
 
     <!-- Chatter -->

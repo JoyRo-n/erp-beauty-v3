@@ -10,7 +10,11 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Quotation & Sales Order</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Document Actions</span>
+            <a href="{{ route('s02.customer') }}" class="text-xs text-purple-700 hover:underline font-medium">Customers</a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('s06.stock') }}" class="text-xs text-purple-700 hover:underline font-medium">Stock Overview</a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('s15.return') }}" class="text-xs text-purple-700 hover:underline font-medium">Returns</a>
         </div>
         <div class="flex items-center space-x-3">
             <form method="GET" action="{{ route('s05.sales') }}">
@@ -45,15 +49,31 @@
             </div>
 
             <div class="flex items-center space-x-2">
+                @php
+                    $canOpenDo = in_array($user->role, ['Admin', 'Owner', 'Warehouse', 'Inventory']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order');
+                    $canOpenInv = in_array($user->role, ['Admin', 'Owner', 'Finance']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Customer Invoice');
+                @endphp
                 @if($selectedOrder && $selectedOrder->deliveryOrders->count() > 0)
-                    <a href="{{ route('s07.delivery', ['do' => $selectedOrder->deliveryOrders->first()->do_number]) }}" class="px-3 py-1.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold hover:bg-amber-100">
-                        <i class="fa-solid fa-truck-fast mr-1"></i> Delivery ({{ $selectedOrder->deliveryOrders->count() }})
-                    </a>
+                    @if($canOpenDo)
+                        <a href="{{ route('s07.delivery', ['do' => $selectedOrder->deliveryOrders->first()->do_number]) }}" class="px-3 py-1.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold hover:bg-amber-100">
+                            <i class="fa-solid fa-truck-fast mr-1"></i> Delivery ({{ $selectedOrder->deliveryOrders->count() }})
+                        </a>
+                    @else
+                        <span class="px-3 py-1.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+                            <i class="fa-solid fa-truck-fast mr-1"></i> Delivery: {{ $selectedOrder->deliveryOrders->first()->do_number }}
+                        </span>
+                    @endif
                 @endif
                 @if($selectedOrder && $selectedOrder->invoices->count() > 0)
-                    <a href="{{ route('s08.invoice', ['inv' => $selectedOrder->invoices->first()->invoice_number]) }}" class="px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 text-xs font-bold hover:bg-teal-100">
-                        <i class="fa-solid fa-file-invoice mr-1"></i> Invoice ({{ $selectedOrder->invoices->count() }})
-                    </a>
+                    @if($canOpenInv)
+                        <a href="{{ route('s08.invoice', ['inv' => $selectedOrder->invoices->first()->invoice_number]) }}" class="px-3 py-1.5 rounded bg-teal-50 border border-teal-300 text-teal-800 text-xs font-bold hover:bg-teal-100">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> Invoice ({{ $selectedOrder->invoices->count() }})
+                        </a>
+                    @else
+                        <span class="px-3 py-1.5 rounded bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> Invoice: {{ $selectedOrder->invoices->first()->invoice_number }}
+                        </span>
+                    @endif
                 @endif
             </div>
         </div>
@@ -126,7 +146,7 @@
         <div class="mt-8 border-t pt-6">
             <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
                 <i class="fa-solid fa-cart-plus text-purple-600 mr-2"></i>
-                Create New Quotation / Sales Order (Testing DL-04 & DL-05)
+                Create New Quotation / Sales Order
             </h3>
             <form action="{{ route('s05.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                 @csrf

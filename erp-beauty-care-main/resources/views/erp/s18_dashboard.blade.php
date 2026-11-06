@@ -10,7 +10,7 @@
         <div>
             <span class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-800">Executive KPI Dashboard</span>
             <h1 class="text-xl font-bold text-gray-800 mt-1">Operational Dashboard & Drill-down</h1>
-            <p class="text-xs text-gray-500">Scenario-Only Performance Metrics (Excludes Opening Balances) &bull; SR-20 / DL-17</p>
+            <p class="text-xs text-gray-500">Scenario-Only Performance Metrics (Excludes Opening Balances)</p>
         </div>
         <div class="flex items-center space-x-2">
             <!-- 1-Click Presentation Demo Runner -->
@@ -70,7 +70,7 @@
         </div>
     </div>
 
-    <!-- Drill-Down Sections (SR-20 / T-35: Each figure opens source documents) -->
+    <!-- Drill-Down Sections: Each figure opens source documents -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Revenue Drill-down: Posted Customer Invoices -->
         <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
@@ -85,6 +85,7 @@
                             <th class="p-2">Invoice #</th>
                             <th class="p-2">Customer</th>
                             <th class="p-2 text-right">Untaxed (Rev)</th>
+                            <th class="p-2 text-right">PPN (11%)</th>
                             <th class="p-2 text-right">Total</th>
                             <th class="p-2">Status</th>
                         </tr>
@@ -97,11 +98,12 @@
                                 </td>
                                 <td class="p-2">{{ $inv->customer->name ?? $inv->customer_id }}</td>
                                 <td class="p-2 text-right font-bold text-emerald-700">Rp{{ number_format($inv->untaxed_amount, 0, ',', '.') }}</td>
+                                <td class="p-2 text-right text-gray-600">Rp{{ number_format($inv->tax_amount, 0, ',', '.') }}</td>
                                 <td class="p-2 text-right font-semibold">Rp{{ number_format($inv->total_amount, 0, ',', '.') }}</td>
                                 <td class="p-2"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">{{ $inv->status }}</span></td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="p-3 text-center text-gray-400 italic">No scenario revenue invoices yet.</td></tr>
+                            <tr><td colspan="6" class="p-3 text-center text-gray-400 italic">No scenario revenue invoices yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

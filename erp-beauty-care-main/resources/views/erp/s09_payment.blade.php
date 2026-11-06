@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Register Customer Payment</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Partial Payment & No Overpayment (SR-15 / DL-12)</span>
+            <span class="text-xs text-gray-500">Partial Payment & No Overpayment</span>
         </div>
         <div class="text-xs text-gray-500">
             Journal: <strong>1010 Bank</strong>
@@ -47,7 +47,7 @@
                     <div class="sm:col-span-2">
                         <label class="block font-medium text-gray-700 mb-1">Payment Amount (Rp)</label>
                         <input type="number" name="amount" value="{{ $selectedInvoice->open_amount }}" min="1" max="{{ $selectedInvoice->open_amount }}" step="1" class="w-full border-2 border-purple-400 rounded p-2 text-sm font-bold text-purple-900 focus:outline-none">
-                        <p class="text-gray-400 text-xs mt-1">Entering more than Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }} will be rejected by DL-12.</p>
+                        <p class="text-gray-400 text-xs mt-1">Entering more than Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }} will be rejected automatically.</p>
                     </div>
                 </div>
 

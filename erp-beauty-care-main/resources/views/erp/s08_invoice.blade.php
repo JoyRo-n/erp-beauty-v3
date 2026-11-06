@@ -7,10 +7,12 @@
 <div class="space-y-4">
     <!-- Control Panel -->
     <div class="bg-white border border-gray-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Customer Invoice</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Invoicing Delivered Quantity (SR-02 / DL-01)</span>
+            <a href="{{ route('s09.payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Customer Payments</a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('s12.bill') }}" class="text-xs text-purple-700 hover:underline font-medium">Vendor Bills</a>
         </div>
         <form method="GET" action="{{ route('s08.invoice') }}">
             <select name="inv" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -101,7 +103,7 @@
                                 <td class="p-2.5">{{ $line->description }}</td>
                                 <td class="p-2.5 text-center font-bold">{{ $line->qty }}</td>
                                 <td class="p-2.5 text-right">Rp{{ number_format($line->unit_price, 0, ',', '.') }}</td>
-                                <td class="p-2.5 text-right">Rp{{ number_format($line->unit_price * $line->qty, 0, ',', '.') }}</td>
+                                <td class="p-2.5 text-right">Rp{{ number_format($line->subtotal - $line->tax_amount, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($line->tax_amount, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right font-bold text-gray-800">Rp{{ number_format($line->subtotal, 0, ',', '.') }}</td>
                             </tr>

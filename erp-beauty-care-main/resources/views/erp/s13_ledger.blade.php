@@ -7,10 +7,14 @@
 <div class="space-y-4">
     <!-- Control Panel -->
     <div class="bg-white border border-gray-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Journal Entries & General Ledger</span>
             <span class="text-gray-400">|</span>
-            <span class="text-xs text-gray-500">Debit = Credit Balanced (SR-16 / DL-13)</span>
+            <a href="{{ route('s18.dashboard') }}" class="text-xs text-purple-700 hover:underline font-medium">Operational Dashboard</a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('s19.vendor_payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Vendor Payments</a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('s09.payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Customer Payments</a>
         </div>
         <form method="GET" action="{{ route('s13.ledger') }}">
             <select name="entry" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">

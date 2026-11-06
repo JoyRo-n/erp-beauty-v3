@@ -36,6 +36,7 @@ use App\Models\ProductReturn;
 use App\Models\ReturnLine;
 use App\Models\AuditLog;
 use App\Models\LogNote;
+use App\Models\AccessGrant;
 use App\Services\AccountingService;
 use App\Services\InventoryService;
 use App\Services\CreditLimitService;
@@ -79,19 +80,30 @@ class ErpController extends Controller
     }
 
     /**
+     * Whether the user may use a feature: Admin/Owner always, the division's own roles,
+     * or a team that was granted cross-division access to the feature's application.
+     */
+    protected function hasFeatureAccess(User $user, array $allowedRoles, string $featureName): bool
+    {
+        if (RoleAccessService::isSuperRole($user->role)) {
+            return true;
+        }
+
+        return in_array($user->role, $allowedRoles, true)
+            || RoleAccessService::hasGrantForFeature($user->role, $featureName);
+    }
+
+    /**
      * Authorize user access to feature. Admin and Owner have superuser access.
      */
     protected function authorizeRole(User $user, array $allowedRoles, string $featureName, string $docId = 'AUTH')
     {
-        // Admin and Owner can access everything
-        if (in_array($user->role, ['Admin', 'Owner'])) {
+        if ($this->hasFeatureAccess($user, $allowedRoles, $featureName)) {
             return;
         }
 
-        if (!in_array($user->role, $allowedRoles)) {
-            AuditService::log('Access Denied', $featureName, $docId, "Role {$user->role} denied access to {$featureName}", $user->name, $user->role);
-            abort(403, "Access Denied: Role {$user->role} tidak memiliki izin mengakses modul {$featureName} (SR-19 Access Control).");
-        }
+        AuditService::log('Access Denied', $featureName, $docId, "Role {$user->role} denied access to {$featureName}", $user->name, $user->role);
+        abort(403, "Access Denied: Role {$user->role} tidak memiliki izin mengakses modul {$featureName}.");
     }
 
     /**
@@ -114,38 +126,107 @@ class ErpController extends Controller
     }
 
     /**
-     * Switch Active Role (requires key/password to access the target profile)
+     * Switch Active Role:
+     * - When Admin/Owner clicks "Inspeksi Akses" inside Main Admin Matrix (inspect=1):
+     *   keeps their Admin/Owner session intact so they can inspect or press Back/Kembali without termination.
+     * - When switching from the top-right sidebar (inspect=0):
+     *   terminates the current session completely upon confirmation ("Log Out").
      */
     public function switchRole(Request $request)
     {
         $role = $request->input('role', 'Sales');
-        $user = User::where('role', $role)->first();
+        $targetUser = User::where('role', $role)->first();
 
-        // In test mode: allow switching session role directly
-        if (app()->environment('testing')) {
+        // In test mode (unless explicitly testing browser switch flow): allow switching session role directly
+        if (app()->environment('testing') && !$request->boolean('_browser_flow')) {
             $request->session()->put('active_role', $role);
-            if ($user) {
-                Auth::login($user);
+            if ($targetUser) {
+                Auth::login($targetUser);
             }
             return redirect()->back()->with('success', "Active role switched to {$role}");
         }
 
-        // In web browser: every profile needs key (password) to access every nook
-        Auth::logout();
+        // If already logged in as the selected role, stay on the current page
+        if (Auth::check() && Auth::user()->role === $role) {
+            return redirect()->back()->with('info', "Anda sudah aktif menggunakan akun {$role}.");
+        }
+
+        // Non-terminating Staff Inspection from S-01 "Main Admin: Matriks & Inspeksi Hak Akses Staf Divisi"
+        if ($request->boolean('inspect') && Auth::check() && RoleAccessService::isSuperRole(Auth::user()->role)) {
+            $currentUser = Auth::user();
+            $request->session()->put('origin_super_user_id', $currentUser->id);
+            $previousUrl = url()->previous();
+            if ($previousUrl && !str_contains($previousUrl, '/login') && !str_contains($previousUrl, '/switch-role')) {
+                $request->session()->put('switch_return_url', $previousUrl);
+            }
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('login', ['role' => $role, 'inspect' => 1])
+                ->with('info', "Mode Inspeksi {$currentUser->role}: Masukkan kata sandi untuk menginspeksi akun " . ($targetUser ? "{$targetUser->name} ({$role})" : $role) . ", atau tekan Kembali untuk tetap di akun {$currentUser->role}.");
+        }
+
+        // Top-right sidebar account switch: terminate the previous account session completely
+        if (Auth::check()) {
+            $prevUser = Auth::user();
+            AuditService::log('User Logout', 'Auth', (string) $prevUser->id, "User {$prevUser->name} logged out to switch to {$role}", $prevUser->name, $prevUser->role);
+            Auth::logout();
+        }
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login', ['role' => $role])
-            ->with('info', "Anda memilih profil " . ($user ? $user->name : $role) . " ({$role}). Silakan masukkan password akun untuk membuka akses.");
+            ->with('info', "Sesi sebelumnya telah diakhiri. Masukkan kata sandi untuk masuk sebagai " . ($targetUser ? "{$targetUser->name} ({$role})" : $role) . ".");
     }
 
     /**
-     * Reset Baseline
+     * Return directly to the originating Admin / Owner session after inspecting a staff role
      */
-    public function resetBaseline()
+    public function returnToSuperAccount(Request $request)
     {
+        $superId = $request->session()->get('origin_super_user_id');
+        if (!$superId) {
+            return redirect()->route('s01.home');
+        }
+
+        $superUser = User::find($superId);
+        if (!$superUser || !RoleAccessService::isSuperRole($superUser->role)) {
+            $request->session()->forget('origin_super_user_id');
+            return redirect()->route('s01.home');
+        }
+
+        Auth::login($superUser);
+        $request->session()->regenerate();
+        $request->session()->put('active_role', $superUser->role);
+        $request->session()->forget(['origin_super_user_id', 'switch_return_url']);
+
+        AuditService::log('Return Super Session', 'Auth', (string) $superUser->id, "Returned to {$superUser->role} session ({$superUser->name})", $superUser->name, $superUser->role);
+
+        return redirect()->route('s01.home')->with('success', "Kembali ke akun {$superUser->name} ({$superUser->role}).");
+    }
+
+    /**
+     * Reset Baseline (Restricted to Admin, Owner, or Finance)
+     */
+    public function resetBaseline(Request $request)
+    {
+        $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Finance'], 'Financial Dashboard & AR', 'RESET-SEED');
+
+        $email = $user->email;
+        $role = $user->role;
+
         $seeder = new BaselineSeeder();
         $seeder->run();
+
+        $reseededUser = User::where('email', $email)->first() ?: User::where('role', $role)->first();
+        if ($reseededUser) {
+            Auth::login($reseededUser);
+            $request->session()->put('active_role', $reseededUser->role);
+        }
+
+        AuditService::log('Reset Baseline', 'System', 'BASELINE', 'Database restored to pristine baseline dataset', $user->name, $role);
+
         return redirect()->route('s01.home')->with('success', 'Database successfully restored to pristine baseline dataset!');
     }
 
@@ -160,33 +241,41 @@ class ErpController extends Controller
         $testJournalsCount = JournalEntry::where('entry_number', '!=', 'JE/2026/OPENING')->count();
         $recentAudit = AuditLog::latest('id')->take(10)->get();
 
-        // Financial & Inventory Overview Data for Interactive Dashboard Charts
-        $totalAr = (float) JournalItem::where('account_code', '1100')->sum(DB::raw('debit - credit'));
-        $totalAp = (float) JournalItem::where('account_code', '2100')->sum(DB::raw('credit - debit'));
-        $stockValuation = (float) JournalItem::where('account_code', '1200')->sum(DB::raw('debit - credit'));
+        // Role-allocated chart visibility on S-01 Home
+        $showFinanceChart = in_array($role, ['Admin', 'Owner', 'Finance'], true);
+        $showInventoryChart = in_array($role, ['Sales', 'Warehouse', 'Inventory'], true);
 
-        $totalUnitsJkt = (int) StockQuant::where('location_code', 'WH-JKT')->sum('on_hand');
-        $totalUnitsBdg = (int) StockQuant::where('location_code', 'ST-BDG')->sum('on_hand');
+        // Financial & Inventory Overview Data for Interactive Dashboard Charts
+        $totalAr = $showFinanceChart ? (float) JournalItem::where('account_code', '1100')->sum(DB::raw('debit - credit')) : 0.0;
+        $totalAp = $showFinanceChart ? (float) JournalItem::where('account_code', '2100')->sum(DB::raw('credit - debit')) : 0.0;
+        $stockValuation = $showFinanceChart ? (float) JournalItem::where('account_code', '1200')->sum(DB::raw('debit - credit')) : 0.0;
+
+        $totalUnitsJkt = $showInventoryChart ? (int) StockQuant::where('location_code', 'WH-JKT')->sum('on_hand') : 0;
+        $totalUnitsBdg = $showInventoryChart ? (int) StockQuant::where('location_code', 'ST-BDG')->sum('on_hand') : 0;
 
         // Product category distribution
-        $catDistribution = [
+        $catDistribution = $showInventoryChart ? [
             'Cleanser' => (int) StockQuant::where('variant_sku', 'like', 'BC-CLN%')->sum('on_hand'),
             'Toner'    => (int) StockQuant::where('variant_sku', 'like', 'BC-TON%')->sum('on_hand'),
             'Serum'    => (int) StockQuant::where('variant_sku', 'like', 'BC-SER%')->sum('on_hand'),
             'Mask'     => (int) StockQuant::where('variant_sku', 'like', 'BC-MSK%')->sum('on_hand'),
             'Lipstick' => (int) StockQuant::where('variant_sku', 'like', 'BC-LIP%')->sum('on_hand'),
-        ];
+        ] : [];
 
-        // Dynamic Role-based Apps & Shortcuts (SR-19 Access Control)
+        // Dynamic Role-based Apps & Shortcuts (Access Control + cross-division grants)
         $accessibleApps = RoleAccessService::getAccessibleApps($role);
         $accessibleShortcuts = RoleAccessService::getAccessibleShortcuts($role);
         $adminStaffMatrix = in_array($role, ['Admin', 'Owner']) ? RoleAccessService::getAdminStaffLocatorMatrix() : [];
+        $allApps = RoleAccessService::getAllApps();
+        $accessGrants = in_array($role, ['Admin', 'Owner']) ? AccessGrant::orderByDesc('id')->get() : collect();
 
         return view('erp.s01_home', compact(
             'user', 'bankBalance', 'testJournalsCount', 'recentAudit',
+            'showFinanceChart', 'showInventoryChart',
             'totalAr', 'totalAp', 'stockValuation',
             'totalUnitsJkt', 'totalUnitsBdg', 'catDistribution',
-            'accessibleApps', 'accessibleShortcuts', 'adminStaffMatrix'
+            'accessibleApps', 'accessibleShortcuts', 'adminStaffMatrix',
+            'allApps', 'accessGrants'
         ));
     }
 
@@ -248,7 +337,7 @@ class ErpController extends Controller
     public function products(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Warehouse', 'Purchasing', 'Sales', 'Inventory'], 'Product & Catalog');
+        $this->authorizeRole($user, ['Warehouse', 'Sales', 'Inventory'], 'Product & Catalog');
 
         $products = Product::all();
         $selectedSku = $request->input('sku', 'BC-LIP-001');
@@ -265,7 +354,7 @@ class ErpController extends Controller
     public function createProduct(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Warehouse', 'Purchasing', 'Sales', 'Inventory'], 'Product & Catalog');
+        $this->authorizeRole($user, ['Warehouse', 'Sales', 'Inventory'], 'Product & Catalog');
 
         $validated = $request->validate([
             'variant_sku' => 'required|string|max:30',
@@ -278,10 +367,10 @@ class ErpController extends Controller
             'default_vendor_id' => 'required|exists:contacts,id',
         ]);
 
-        // SR-13: Variant SKU per ukuran dan warna harus unik
+        // Variant SKU per ukuran dan warna harus unik
         if (Product::where('variant_sku', $validated['variant_sku'])->exists()) {
-            AuditService::log('Duplicate SKU Blocked', 'Product', $validated['variant_sku'], "Duplicate SKU {$validated['variant_sku']} rejected (SR-13)", $user->name, $user->role);
-            return redirect()->back()->with('error', "Pembuatan produk ditolak: SKU {$validated['variant_sku']} sudah terdaftar dalam sistem (SR-13).");
+            AuditService::log('Duplicate SKU Blocked', 'Product', $validated['variant_sku'], "Duplicate SKU {$validated['variant_sku']} rejected", $user->name, $user->role);
+            return redirect()->back()->with('error', "Pembuatan produk ditolak: SKU {$validated['variant_sku']} sudah terdaftar dalam sistem.");
         }
 
         $product = Product::create($validated);
@@ -369,7 +458,15 @@ class ErpController extends Controller
         $customers = Contact::where('contact_type', 'customer')->get();
         $products = Product::all();
 
-        $relatedDocs = $selectedOrder ? DeliveryOrder::where('sales_order_number', $selectedOrder->order_number)->get() : collect();
+        $relatedDocs = collect();
+        if ($selectedOrder) {
+            foreach (DeliveryOrder::where('sales_order_number', $selectedOrder->order_number)->get() as $doDoc) {
+                $relatedDocs->push($doDoc);
+            }
+            foreach (CustomerInvoice::where('sales_order_number', $selectedOrder->order_number)->get() as $invDoc) {
+                $relatedDocs->push($invDoc);
+            }
+        }
         $logNotes = $selectedOrder ? LogNote::where('document_id', $selectedOrder->order_number)->get() : collect();
         $auditLogs = $selectedOrder ? AuditLog::where('document_id', $selectedOrder->order_number)->get() : collect();
 
@@ -393,10 +490,10 @@ class ErpController extends Controller
         $qty = (int) $request->qty;
         $discount = (float) ($request->discount_percent ?? 0);
 
-        // DL-04: Line discount max 15%
+        // Line discount max 15%
         if ($discount > 15) {
             AuditService::log('Discount Blocked', 'Sales Order', 'NEW', "Discount {$discount}% exceeds 15% limit", $user->name, $user->role);
-            return redirect()->back()->with('error', 'Discount exceeds maximum allowed limit of 15% (SR-07).');
+            return redirect()->back()->with('error', 'Discount exceeds maximum allowed limit of 15%.');
         }
 
         $unitPrice = (float) $product->sales_price;
@@ -491,7 +588,7 @@ class ErpController extends Controller
     public function stock(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Warehouse', 'Inventory'], 'Stock Overview');
+        $this->authorizeRole($user, ['Warehouse', 'Sales', 'Inventory'], 'Stock Overview');
         $quants = StockQuant::with(['location', 'product'])->get();
         $whJktStocks = $quants->where('location_code', 'WH-JKT');
         $stBdgStocks = $quants->where('location_code', 'ST-BDG');
@@ -514,70 +611,43 @@ class ErpController extends Controller
         $user = $this->getActiveUser($request);
         $this->authorizeRole($user, ['Warehouse', 'Inventory'], 'Delivery Order');
 
-        // Auto-initialize baseline delivery orders in web mode
-        if (DeliveryOrder::count() === 0 && !app()->environment('testing')) {
-            $so6 = SalesOrder::find('S00006');
-            if ($so6) {
-                $do6 = DeliveryOrder::create([
+        // Ensure baseline Confirmed Sales Order S00006 has its pending Delivery Order ready in web mode without altering stock
+        if (!app()->environment('testing')) {
+            $so6 = SalesOrder::with('lines')->find('S00006');
+            if ($so6 && $so6->status === 'Confirmed' && DeliveryOrder::where('sales_order_number', 'S00006')->doesntExist()) {
+                DeliveryOrder::create([
                     'do_number' => 'WH/OUT/00006',
                     'sales_order_number' => 'S00006',
                     'customer_id' => $so6->customer_id,
-                    'source_location' => 'WH-JKT',
+                    'source_location' => $so6->warehouse_code ?: 'WH-JKT',
                     'status' => 'Confirmed',
                 ]);
-                DeliveryOrderLine::create([
-                    'do_number' => 'WH/OUT/00006',
-                    'variant_sku' => 'BC-CLN-100',
-                    'demand_qty' => 3,
-                    'reserved_qty' => 3,
-                    'done_qty' => 0,
-                    'backorder_qty' => 0,
-                ]);
+                foreach ($so6->lines as $soLine) {
+                    DeliveryOrderLine::create([
+                        'do_number' => 'WH/OUT/00006',
+                        'variant_sku' => $soLine->variant_sku,
+                        'demand_qty' => $soLine->qty,
+                        'reserved_qty' => $soLine->qty,
+                        'done_qty' => 0,
+                        'backorder_qty' => 0,
+                    ]);
+                }
             }
-
-            // Reference S-07 wireframe document WH/OUT/00007 (C001, 4 x BC-CLN-100)
-            $so7 = SalesOrder::firstOrCreate(['order_number' => 'S00007'], [
-                'customer_id' => 'C001',
-                'warehouse_code' => 'WH-JKT',
-                'payment_terms' => 'Net 14',
-                'status' => 'Confirmed',
-                'untaxed_amount' => 480000,
-                'tax_amount' => 52800,
-                'total_amount' => 532800,
-                'created_by' => 'Sales User',
-                'confirmed_at' => now(),
-            ]);
-            SalesOrderLine::firstOrCreate(['order_number' => 'S00007', 'variant_sku' => 'BC-CLN-100'], [
-                'qty' => 4,
-                'delivered_qty' => 0,
-                'invoiced_qty' => 0,
-                'unit_price' => 120000,
-                'tax_rate' => 11,
-                'tax_amount' => 52800,
-                'subtotal' => 532800,
-            ]);
-            $do7 = DeliveryOrder::create([
-                'do_number' => 'WH/OUT/00007',
-                'sales_order_number' => 'S00007',
-                'customer_id' => 'C001',
-                'source_location' => 'WH-JKT',
-                'status' => 'Confirmed',
-            ]);
-            DeliveryOrderLine::create([
-                'do_number' => 'WH/OUT/00007',
-                'variant_sku' => 'BC-CLN-100',
-                'demand_qty' => 4,
-                'reserved_qty' => 4,
-                'done_qty' => 0,
-                'backorder_qty' => 0,
-            ]);
         }
 
         $orders = DeliveryOrder::with(['lines.product', 'customer', 'salesOrder'])->latest()->get();
         $selectedNumber = $request->input('do', 'WH/OUT/00007');
         $selectedDo = DeliveryOrder::find($selectedNumber) ?: $orders->first();
 
-        $relatedDocs = $selectedDo && $selectedDo->salesOrder ? collect([$selectedDo->salesOrder]) : collect();
+        $relatedDocs = collect();
+        if ($selectedDo && $selectedDo->salesOrder) {
+            $relatedDocs->push($selectedDo->salesOrder);
+        }
+        if ($selectedDo) {
+            foreach (CustomerInvoice::where('delivery_order_number', $selectedDo->do_number)->get() as $invDoc) {
+                $relatedDocs->push($invDoc);
+            }
+        }
         $logNotes = $selectedDo ? LogNote::where('document_id', $selectedDo->do_number)->get() : collect();
         $auditLogs = $selectedDo ? AuditLog::where('document_id', $selectedDo->do_number)->get() : collect();
 
@@ -587,6 +657,8 @@ class ErpController extends Controller
     public function validateDelivery(Request $request, $doNumber)
     {
         $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Warehouse', 'Inventory'], 'Delivery Order', $doNumber);
+
         $do = DeliveryOrder::find($doNumber);
         if (!$do) {
             return redirect()->route('s07.delivery')->with('error', "Surat jalan {$doNumber} tidak ditemukan dalam sistem!");
@@ -595,6 +667,61 @@ class ErpController extends Controller
 
         try {
             $bo = InventoryService::validateDelivery($do, $quantities);
+
+            // Auto-create Draft Customer Invoice for delivered quantities so Finance can review & post on S-08
+            $do->refresh()->load(['lines.product', 'salesOrder.lines']);
+            if ($do->status === 'Done' && CustomerInvoice::where('delivery_order_number', $do->do_number)->doesntExist()) {
+                $deliveredLines = $do->lines->filter(fn ($l) => $l->done_qty > 0);
+                if ($deliveredLines->isNotEmpty()) {
+                    $invNum = self::generateSequence(CustomerInvoice::class, 'invoice_number', 'INV/2026/', 5);
+                    $untaxedTotal = 0;
+                    $taxTotal = 0;
+                    $linePayloads = [];
+
+                    foreach ($deliveredLines as $dLine) {
+                        $soLine = $do->salesOrder ? $do->salesOrder->lines->firstWhere('variant_sku', $dLine->variant_sku) : null;
+                        $unitPrice = $soLine ? (float) $soLine->unit_price : (float) ($dLine->product->sales_price ?? 0);
+                        $discount = $soLine ? (float) $soLine->discount_percent : 0.0;
+                        $lineUntaxed = ($unitPrice * $dLine->done_qty) * (1 - ($discount / 100));
+                        $lineTax = AccountingService::calculateLineTax($unitPrice, $dLine->done_qty, $discount);
+                        $lineSubtotal = $lineUntaxed + $lineTax;
+
+                        $untaxedTotal += $lineUntaxed;
+                        $taxTotal += $lineTax;
+                        $linePayloads[] = [
+                            'invoice_number' => $invNum,
+                            'item_type' => 'product',
+                            'item_code' => $dLine->variant_sku,
+                            'description' => $dLine->product->name ?? $dLine->variant_sku,
+                            'qty' => $dLine->done_qty,
+                            'unit_price' => $unitPrice,
+                            'discount_percent' => $discount,
+                            'tax_amount' => $lineTax,
+                            'subtotal' => $lineSubtotal,
+                        ];
+                    }
+
+                    $grandTotal = $untaxedTotal + $taxTotal;
+                    CustomerInvoice::create([
+                        'invoice_number' => $invNum,
+                        'customer_id' => $do->customer_id,
+                        'source_doc_type' => 'Delivery Order',
+                        'source_doc_id' => $do->do_number,
+                        'sales_order_number' => $do->sales_order_number,
+                        'delivery_order_number' => $do->do_number,
+                        'status' => 'Draft',
+                        'untaxed_amount' => $untaxedTotal,
+                        'tax_amount' => $taxTotal,
+                        'total_amount' => $grandTotal,
+                        'paid_amount' => 0,
+                        'open_amount' => $grandTotal,
+                    ]);
+                    foreach ($linePayloads as $lp) {
+                        CustomerInvoiceLine::create($lp);
+                    }
+                }
+            }
+
             $msg = "Delivery Order {$doNumber} validated successfully!";
             if ($bo) {
                 $msg .= " Backorder {$bo->do_number} created for remaining items.";
@@ -612,34 +739,6 @@ class ErpController extends Controller
     {
         $user = $this->getActiveUser($request);
         $this->authorizeRole($user, ['Finance'], 'Customer Invoice');
-
-        // Auto-initialize baseline customer invoice in web mode
-        if (CustomerInvoice::count() === 0 && !app()->environment('testing')) {
-            $inv7 = CustomerInvoice::create([
-                'invoice_number' => 'INV/2026/00007',
-                'sales_order_number' => 'S00007',
-                'delivery_order_number' => 'WH/OUT/00007',
-                'customer_id' => 'C001',
-                'payment_terms' => 'Net 14',
-                'due_date' => now()->addDays(14)->toDateString(),
-                'status' => 'Posted',
-                'untaxed_amount' => 240000,
-                'tax_amount' => 26400,
-                'total_amount' => 266400,
-                'residual_amount' => 266400,
-                'posted_at' => now(),
-            ]);
-            CustomerInvoiceLine::create([
-                'invoice_number' => 'INV/2026/00007',
-                'item_code' => 'BC-CLN-100',
-                'description' => 'Brightening Cleanser 100ml',
-                'qty' => 2,
-                'unit_price' => 120000,
-                'tax_rate' => 11,
-                'tax_amount' => 26400,
-                'subtotal' => 266400,
-            ]);
-        }
 
         $invoices = CustomerInvoice::with(['customer', 'lines', 'payments'])->latest()->get();
         $selectedNumber = $request->input('inv', 'INV/2026/00007');
@@ -664,8 +763,9 @@ class ErpController extends Controller
     public function postInvoice(Request $request, $invNumber)
     {
         $user = $this->getActiveUser($request);
-        if ($user->role !== 'Finance' && $user->role !== 'Owner') {
-            return redirect()->back()->with('error', 'Only Finance or Owner role can post customer invoices (SR-19).');
+        if (!$this->hasFeatureAccess($user, ['Finance'], 'Customer Invoice')) {
+            AuditService::log('Access Denied', 'Customer Invoice', $invNumber, "Role {$user->role} denied posting Customer Invoice", $user->name, $user->role);
+            abort(403, 'Access Denied: Hanya Finance yang dapat mem-posting faktur pelanggan.');
         }
 
         $inv = CustomerInvoice::find($invNumber);
@@ -727,8 +827,10 @@ class ErpController extends Controller
     public function purchase(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Purchasing'], 'Purchase Order');
-        $orders = PurchaseOrder::with(['vendor', 'lines.product'])->latest()->get();
+        $this->authorizeRole($user, ['Purchasing', 'Warehouse'], 'Purchase Order');
+        $canCreatePo = $this->hasFeatureAccess($user, ['Purchasing'], 'Purchase Order');
+
+        $orders = PurchaseOrder::with(['vendor', 'lines.product', 'receipts', 'bills'])->latest()->get();
         $selectedNumber = $request->input('po', 'PO00006');
         $selectedOrder = PurchaseOrder::find($selectedNumber) ?: $orders->first();
         $vendors = Contact::where('contact_type', 'vendor')->get();
@@ -738,7 +840,7 @@ class ErpController extends Controller
         $logNotes = $selectedOrder ? LogNote::where('document_id', $selectedOrder->po_number)->get() : collect();
         $auditLogs = $selectedOrder ? AuditLog::where('document_id', $selectedOrder->po_number)->get() : collect();
 
-        return view('erp.s10_purchase', compact('user', 'orders', 'selectedOrder', 'vendors', 'products', 'relatedDocs', 'logNotes', 'auditLogs'));
+        return view('erp.s10_purchase', compact('user', 'orders', 'selectedOrder', 'vendors', 'products', 'relatedDocs', 'logNotes', 'auditLogs', 'canCreatePo'));
     }
 
     public function createPurchaseOrder(Request $request)
@@ -817,50 +919,45 @@ class ErpController extends Controller
     public function receipts(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Warehouse', 'Purchasing', 'Inventory'], 'Purchase Receipt');
+        $this->authorizeRole($user, ['Warehouse', 'Inventory'], 'Purchase Receipt');
 
-        // Auto-initialize baseline purchase receipt in web mode
-        if (PurchaseReceipt::count() === 0 && !app()->environment('testing')) {
-            $po7 = PurchaseOrder::firstOrCreate(['po_number' => 'PO00007'], [
-                'vendor_id' => 'V001',
-                'payment_terms' => 'Net 14',
-                'status' => 'Confirmed',
-                'untaxed_amount' => 350000,
-                'tax_amount' => 38500,
-                'total_amount' => 388500,
-                'is_locked' => true,
-                'confirmed_at' => now(),
-            ]);
-            PurchaseOrderLine::firstOrCreate(['po_number' => 'PO00007', 'variant_sku' => 'BC-TON-100'], [
-                'qty_ordered' => 5,
-                'qty_received' => 0,
-                'qty_billed' => 0,
-                'unit_cost' => 70000,
-                'tax_amount' => 38500,
-                'subtotal' => 388500,
-            ]);
-            PurchaseReceipt::create([
-                'receipt_number' => 'WH/IN/00007',
-                'po_number' => 'PO00007',
-                'vendor_id' => 'V001',
-                'destination_location' => 'WH-JKT',
-                'status' => 'Draft',
-            ]);
-            PurchaseReceiptLine::create([
-                'receipt_number' => 'WH/IN/00007',
-                'variant_sku' => 'BC-TON-100',
-                'ordered_qty' => 5,
-                'accepted_qty' => 0,
-                'rejected_qty' => 0,
-                'unit_cost' => 70000,
-            ]);
+        // Ensure baseline Confirmed Purchase Order PO00006 has its pending Receipt ready in web mode without altering stock
+        if (!app()->environment('testing')) {
+            $po6 = PurchaseOrder::with('lines')->find('PO00006');
+            if ($po6 && $po6->status === 'Confirmed' && PurchaseReceipt::where('po_number', 'PO00006')->doesntExist()) {
+                PurchaseReceipt::create([
+                    'receipt_number' => 'WH/IN/00006',
+                    'po_number' => 'PO00006',
+                    'vendor_id' => $po6->vendor_id,
+                    'destination_location' => 'WH-JKT',
+                    'status' => 'Draft',
+                ]);
+                foreach ($po6->lines as $poLine) {
+                    PurchaseReceiptLine::create([
+                        'receipt_number' => 'WH/IN/00006',
+                        'variant_sku' => $poLine->variant_sku,
+                        'ordered_qty' => $poLine->qty_ordered,
+                        'accepted_qty' => 0,
+                        'rejected_qty' => 0,
+                        'unit_cost' => $poLine->unit_cost,
+                    ]);
+                }
+            }
         }
 
         $receipts = PurchaseReceipt::with(['vendor', 'lines.product', 'purchaseOrder'])->latest()->get();
         $selectedNumber = $request->input('rec', 'WH/IN/00007');
         $selectedReceipt = PurchaseReceipt::find($selectedNumber) ?: $receipts->first();
 
-        $relatedDocs = $selectedReceipt && $selectedReceipt->purchaseOrder ? collect([$selectedReceipt->purchaseOrder]) : collect();
+        $relatedDocs = collect();
+        if ($selectedReceipt && $selectedReceipt->purchaseOrder) {
+            $relatedDocs->push($selectedReceipt->purchaseOrder);
+        }
+        if ($selectedReceipt) {
+            foreach (VendorBill::where('receipt_number', $selectedReceipt->receipt_number)->get() as $billDoc) {
+                $relatedDocs->push($billDoc);
+            }
+        }
         $logNotes = $selectedReceipt ? LogNote::where('document_id', $selectedReceipt->receipt_number)->get() : collect();
         $auditLogs = $selectedReceipt ? AuditLog::where('document_id', $selectedReceipt->receipt_number)->get() : collect();
 
@@ -870,6 +967,8 @@ class ErpController extends Controller
     public function validateReceipt(Request $request, $recNumber)
     {
         $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Warehouse', 'Inventory'], 'Purchase Receipt', $recNumber);
+
         $receipt = PurchaseReceipt::find($recNumber);
         if (!$receipt) {
             return redirect()->route('s11.receipt')->with('error', "Penerimaan barang {$recNumber} tidak ditemukan!");
@@ -887,6 +986,57 @@ class ErpController extends Controller
 
         try {
             InventoryService::validateReceipt($receipt, $inspections);
+
+            // Auto-create 3-way matched Draft Vendor Bill for accepted quantities so Purchasing & Finance can review & post on S-12
+            $receipt->refresh()->load('lines');
+            if ($receipt->status === 'Done' && VendorBill::where('receipt_number', $receipt->receipt_number)->doesntExist()) {
+                $acceptedLines = $receipt->lines->filter(fn ($l) => $l->accepted_qty > 0);
+                if ($acceptedLines->isNotEmpty()) {
+                    $billNum = self::generateSequence(VendorBill::class, 'bill_number', 'BILL/2026/', 5);
+                    $untaxedTotal = 0;
+                    $taxTotal = 0;
+                    $billLinePayloads = [];
+
+                    foreach ($acceptedLines as $rLine) {
+                        $unitCost = (float) $rLine->unit_cost;
+                        $lineUntaxed = $unitCost * $rLine->accepted_qty;
+                        $lineTax = AccountingService::calculateLineTax($unitCost, $rLine->accepted_qty);
+                        $lineSubtotal = $lineUntaxed + $lineTax;
+
+                        $untaxedTotal += $lineUntaxed;
+                        $taxTotal += $lineTax;
+                        $billLinePayloads[] = [
+                            'bill_number' => $billNum,
+                            'variant_sku' => $rLine->variant_sku,
+                            'po_qty' => $rLine->ordered_qty,
+                            'accepted_qty' => $rLine->accepted_qty,
+                            'already_billed_qty' => 0,
+                            'bill_qty' => $rLine->accepted_qty,
+                            'unit_cost' => $unitCost,
+                            'tax_amount' => $lineTax,
+                            'subtotal' => $lineSubtotal,
+                        ];
+                    }
+
+                    $grandTotal = $untaxedTotal + $taxTotal;
+                    VendorBill::create([
+                        'bill_number' => $billNum,
+                        'vendor_id' => $receipt->vendor_id,
+                        'po_number' => $receipt->po_number,
+                        'receipt_number' => $receipt->receipt_number,
+                        'status' => 'Draft',
+                        'untaxed_amount' => $untaxedTotal,
+                        'tax_amount' => $taxTotal,
+                        'total_amount' => $grandTotal,
+                        'paid_amount' => 0,
+                        'open_amount' => $grandTotal,
+                    ]);
+                    foreach ($billLinePayloads as $blp) {
+                        VendorBillLine::create($blp);
+                    }
+                }
+            }
+
             return redirect()->route('s11.receipt', ['rec' => $recNumber])->with('success', "Receipt {$recNumber} validated with quality acceptance!");
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -899,32 +1049,8 @@ class ErpController extends Controller
     public function bills(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Vendor Bill');
-
-        // Auto-initialize baseline vendor bill in web mode
-        if (VendorBill::count() === 0 && !app()->environment('testing')) {
-            $bill7 = VendorBill::create([
-                'bill_number' => 'BILL/2026/00007',
-                'po_number' => 'PO00007',
-                'vendor_id' => 'V001',
-                'payment_terms' => 'Net 14',
-                'due_date' => now()->addDays(14)->toDateString(),
-                'status' => 'Draft',
-                'untaxed_amount' => 280000,
-                'tax_amount' => 30800,
-                'total_amount' => 310800,
-                'residual_amount' => 310800,
-            ]);
-            VendorBillLine::create([
-                'bill_number' => 'BILL/2026/00007',
-                'variant_sku' => 'BC-TON-100',
-                'description' => 'Hydrating Toner 100ml',
-                'billed_qty' => 4,
-                'unit_cost' => 70000,
-                'tax_amount' => 30800,
-                'subtotal' => 310800,
-            ]);
-        }
+        $this->authorizeRole($user, ['Finance', 'Purchasing'], 'Vendor Bill');
+        $canPostBill = $this->hasFeatureAccess($user, ['Finance'], 'Vendor Bill');
 
         $bills = VendorBill::with(['vendor', 'lines', 'purchaseOrder'])->latest()->get();
         $selectedNumber = $request->input('bill', 'BILL/2026/00007');
@@ -935,18 +1061,23 @@ class ErpController extends Controller
             $po = PurchaseOrder::find($selectedBill->po_number);
             if ($po) $relatedDocs->push($po);
         }
+        if ($selectedBill && $selectedBill->receipt_number) {
+            $rec = PurchaseReceipt::find($selectedBill->receipt_number);
+            if ($rec) $relatedDocs->push($rec);
+        }
 
         $logNotes = $selectedBill ? LogNote::where('document_id', $selectedBill->bill_number)->get() : collect();
         $auditLogs = $selectedBill ? AuditLog::where('document_id', $selectedBill->bill_number)->get() : collect();
 
-        return view('erp.s12_bill', compact('user', 'bills', 'selectedBill', 'relatedDocs', 'logNotes', 'auditLogs'));
+        return view('erp.s12_bill', compact('user', 'bills', 'selectedBill', 'relatedDocs', 'logNotes', 'auditLogs', 'canPostBill'));
     }
 
     public function postBill(Request $request, $billNumber)
     {
         $user = $this->getActiveUser($request);
-        if ($user->role !== 'Finance' && $user->role !== 'Owner') {
-            return redirect()->back()->with('error', 'Only Finance role can post vendor bills (SR-19).');
+        if (!$this->hasFeatureAccess($user, ['Finance'], 'Vendor Bill')) {
+            AuditService::log('Access Denied', 'Vendor Bill', $billNumber, "Role {$user->role} denied posting Vendor Bill", $user->name, $user->role);
+            abort(403, 'Access Denied: Hanya Finance yang dapat mem-posting tagihan vendor.');
         }
 
         $bill = VendorBill::find($billNumber);
@@ -1035,55 +1166,13 @@ class ErpController extends Controller
     public function returns(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Sales'], 'Sales Return');
-
-        // Auto-initialize baseline return and posted origin invoice in web mode
-        if (!app()->environment('testing')) {
-            $inv7 = CustomerInvoice::firstOrCreate(['invoice_number' => 'INV/2026/00007'], [
-                'sales_order_number' => 'S00007',
-                'delivery_order_number' => 'WH/OUT/00007',
-                'customer_id' => 'C001',
-                'payment_terms' => 'Net 14',
-                'due_date' => now()->addDays(14)->toDateString(),
-                'status' => 'Posted',
-                'untaxed_amount' => 240000,
-                'tax_amount' => 26400,
-                'total_amount' => 266400,
-                'residual_amount' => 266400,
-                'posted_at' => now(),
-            ]);
-            CustomerInvoiceLine::firstOrCreate(['invoice_number' => 'INV/2026/00007', 'item_code' => 'BC-CLN-100'], [
-                'description' => 'Brightening Cleanser 100ml',
-                'qty' => 2,
-                'unit_price' => 120000,
-                'tax_rate' => 11,
-                'tax_amount' => 26400,
-                'subtotal' => 266400,
-            ]);
-
-            if (ProductReturn::count() === 0) {
-                $ret7 = ProductReturn::create([
-                    'return_number' => 'WH/RET/00007',
-                    'origin_invoice_number' => 'INV/2026/00007',
-                    'customer_id' => 'C001',
-                    'inspection_status' => 'Sealed / Accepted',
-                    'status' => 'Done',
-                ]);
-                ReturnLine::create([
-                    'return_number' => 'WH/RET/00007',
-                    'variant_sku' => 'BC-CLN-100',
-                    'delivered_qty' => 2,
-                    'already_returned_qty' => 0,
-                    'return_qty' => 1,
-                    'unit_price' => 120000,
-                    'unit_cost' => 75000,
-                    'action' => 'Restocked to WH-JKT',
-                ]);
-            }
-        }
+        $this->authorizeRole($user, ['Warehouse', 'Finance', 'Sales'], 'Sales Return');
+        $canProcessReturn = $this->hasFeatureAccess($user, ['Warehouse', 'Finance', 'Inventory'], 'Sales Return')
+            || RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order')
+            || RoleAccessService::hasGrantForFeature($user->role, 'Customer Invoice');
 
         $returns = ProductReturn::with(['customer', 'originInvoice', 'lines'])->latest()->get();
-        $invoices = CustomerInvoice::where('status', 'Posted')->get();
+        $invoices = CustomerInvoice::whereIn('status', ['Posted', 'Paid'])->get();
         $selectedNumber = $request->input('ret', 'WH/RET/00007');
         $selectedReturn = ProductReturn::find($selectedNumber) ?: $returns->first();
 
@@ -1091,13 +1180,20 @@ class ErpController extends Controller
         $logNotes = $selectedReturn ? LogNote::where('document_id', $selectedReturn->return_number)->get() : collect();
         $auditLogs = $selectedReturn ? AuditLog::where('document_id', $selectedReturn->return_number)->get() : collect();
 
-        return view('erp.s15_return', compact('user', 'returns', 'invoices', 'selectedReturn', 'relatedDocs', 'logNotes', 'auditLogs'));
+        return view('erp.s15_return', compact('user', 'returns', 'invoices', 'selectedReturn', 'relatedDocs', 'logNotes', 'auditLogs', 'canProcessReturn'));
     }
 
     public function processReturn(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Sales'], 'Sales Return');
+        if (
+            !$this->hasFeatureAccess($user, ['Warehouse', 'Finance', 'Inventory'], 'Sales Return')
+            && !RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order')
+            && !RoleAccessService::hasGrantForFeature($user->role, 'Customer Invoice')
+        ) {
+            AuditService::log('Access Denied', 'Sales Return', 'RET-PROCESS', "Role {$user->role} denied processing Return & Credit Note", $user->name, $user->role);
+            abort(403, 'Access Denied: Inspeksi fisik retur dan penerbitan Credit Note hanya dapat diproses oleh Warehouse atau Finance.');
+        }
 
         $request->validate([
             'origin_invoice_number' => 'required',
@@ -1115,7 +1211,14 @@ class ErpController extends Controller
         $inspection = $request->inspection_status; // 'Sealed / Accepted' or 'Damaged / Rejected'
 
         $invLine = $inv->lines()->where('item_code', $sku)->first();
-        $deliveredQty = $invLine ? $invLine->qty : $returnQty;
+        if (!$invLine) {
+            return redirect()->back()->with('error', "Produk {$sku} tidak ditemukan pada faktur {$inv->invoice_number}.");
+        }
+        $deliveredQty = (int) $invLine->qty;
+
+        $alreadyReturnedQty = (int) ReturnLine::whereHas('productReturn', function ($q) use ($inv) {
+            $q->where('origin_invoice_number', $inv->invoice_number)->where('status', 'Done');
+        })->where('variant_sku', $sku)->sum('return_qty');
 
         $retNum = self::generateSequence(ProductReturn::class, 'return_number', 'WH/RET/', 5);
         $prod = Product::find($sku);
@@ -1124,7 +1227,7 @@ class ErpController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($inv, $retNum, $inspection, $sku, $deliveredQty, $returnQty, $invLine, $prod) {
+            DB::transaction(function () use ($inv, $retNum, $inspection, $sku, $deliveredQty, $alreadyReturnedQty, $returnQty, $invLine, $prod) {
                 $return = ProductReturn::create([
                     'return_number' => $retNum,
                     'origin_invoice_number' => $inv->invoice_number,
@@ -1137,9 +1240,9 @@ class ErpController extends Controller
                     'return_number' => $retNum,
                     'variant_sku' => $sku,
                     'delivered_qty' => $deliveredQty,
-                    'already_returned_qty' => 0,
+                    'already_returned_qty' => $alreadyReturnedQty,
                     'return_qty' => $returnQty,
-                    'unit_price' => $invLine ? $invLine->unit_price : $prod->sales_price,
+                    'unit_price' => $invLine->unit_price,
                     'unit_cost' => $prod->cost,
                 ]);
 
@@ -1204,21 +1307,8 @@ class ErpController extends Controller
     public function treatments(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Studio'], 'Beauty Treatment');
-
-        // Initialize baseline demo treatment TRT/2026/00007 if none exists (web UI experience)
-        if (BeautyTreatment::count() === 0 && !app()->environment('testing')) {
-            BeautyTreatment::create([
-                'treatment_number' => 'TRT/2026/00007',
-                'service_id' => 'SV-FAC-01',
-                'customer_id' => 'C004',
-                'employee_id' => 'E001',
-                'location_code' => 'ST-BDG',
-                'consumed_sku' => 'BC-MSK-001',
-                'consumed_qty' => 1,
-                'status' => 'Draft',
-            ]);
-        }
+        $this->authorizeRole($user, ['Studio', 'Finance'], 'Beauty Treatment');
+        $canManageTreatment = $this->hasFeatureAccess($user, ['Studio'], 'Beauty Treatment');
 
         $treatments = BeautyTreatment::with(['customer', 'employee', 'service'])->latest()->get();
         $selectedNumber = $request->input('trt', 'TRT/2026/00007');
@@ -1230,7 +1320,7 @@ class ErpController extends Controller
         $logNotes = $selectedTreatment ? LogNote::where('document_id', $selectedTreatment->treatment_number)->get() : collect();
         $auditLogs = $selectedTreatment ? AuditLog::where('document_id', $selectedTreatment->treatment_number)->get() : collect();
 
-        return view('erp.s17_treatment', compact('user', 'treatments', 'selectedTreatment', 'employees', 'customers', 'relatedDocs', 'logNotes', 'auditLogs'));
+        return view('erp.s17_treatment', compact('user', 'treatments', 'selectedTreatment', 'employees', 'customers', 'relatedDocs', 'logNotes', 'auditLogs', 'canManageTreatment'));
     }
 
     public function completeTreatment(Request $request, $treatmentNumber)
@@ -1271,7 +1361,8 @@ class ErpController extends Controller
 
         $employee = Employee::findOrFail($validated['employee_id']);
         if (!$employee->hasSkill('Facial')) {
-            return redirect()->back()->with('error', "Penugasan ditolak: Terapis {$employee->name} tidak memiliki sertifikasi keahlian Facial (SR-17).");
+            AuditService::log('Assignment Blocked', 'Beauty Treatment', 'NEW', "Therapist {$employee->name} ({$employee->id}) lacks required Facial skill", $user->name, $user->role);
+            return redirect()->back()->with('error', "Penugasan ditolak: Terapis {$employee->name} tidak memiliki sertifikasi keahlian Facial.");
         }
 
         $treatmentNumber = self::generateSequence(BeautyTreatment::class, 'treatment_number', 'TRT/2026/', 5);
@@ -1302,8 +1393,8 @@ class ErpController extends Controller
 
         $kpis = DashboardService::getScenarioKpi();
 
-        $revenueInvoices = CustomerInvoice::where('status', 'Posted')->get();
-        $cogsMoves = StockMove::where('reference_doc_type', 'Delivery Order')->orWhere('reference_doc_type', 'Treatment')->get();
+        $revenueInvoices = CustomerInvoice::whereIn('status', ['Posted', 'Paid'])->get();
+        $cogsMoves = StockMove::whereIn('reference_doc_type', ['Delivery Order', 'Treatment', 'Return'])->where('is_quarantine', false)->get();
         $unpaidInvoices = CustomerInvoice::where('status', 'Posted')->where('open_amount', '>', 0)->get();
         $quants = StockQuant::with(['location', 'product'])->get();
 
@@ -1357,12 +1448,22 @@ class ErpController extends Controller
     public function runScenarioDemo(Request $request)
     {
         $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Finance'], 'Financial Dashboard & AR', 'DEMO-RUN');
+
+        $email = $user->email;
+        $role = $user->role;
         $scenario = $request->input('scenario', 'all');
 
         try {
             // Restore baseline first to have clean data state
             $seeder = new BaselineSeeder();
             $seeder->run();
+
+            $reseededUser = User::where('email', $email)->first() ?: User::where('role', $role)->first();
+            if ($reseededUser) {
+                Auth::login($reseededUser);
+                $request->session()->put('active_role', $reseededUser->role);
+            }
 
             $results = [];
 
@@ -1529,11 +1630,20 @@ class ErpController extends Controller
 
             if ($scenario === 'studio' || $scenario === 'all') {
                 // Selesaikan treatment Glow Facial untuk C004 oleh E001
-                $treatment = BeautyTreatment::first();
-                if ($treatment) {
-                    TreatmentService::completeTreatment($treatment);
-                    $results[] = "Alur Studio & Treatment ({$treatment->treatment_number} Selesai, 1 Masker ST-BDG terpotong, COGS Rp40.000, Invoice Rp333.000 terbit) SUKSES!";
-                }
+                $treatment = BeautyTreatment::firstOrCreate(
+                    ['treatment_number' => 'TRT/2026/00007'],
+                    [
+                        'service_id' => 'SV-FAC-01',
+                        'customer_id' => 'C004',
+                        'employee_id' => 'E001',
+                        'location_code' => 'ST-BDG',
+                        'consumed_sku' => 'BC-MSK-001',
+                        'consumed_qty' => 1,
+                        'status' => 'Draft',
+                    ]
+                );
+                TreatmentService::completeTreatment($treatment);
+                $results[] = "Alur Studio & Treatment ({$treatment->treatment_number} Selesai, 1 Masker ST-BDG terpotong, COGS Rp40.000, Invoice Rp333.000 terbit) SUKSES!";
             }
 
             $msg = implode("<br>", $results);

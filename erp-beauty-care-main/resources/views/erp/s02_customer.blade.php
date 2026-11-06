@@ -55,7 +55,7 @@
                 <div class="p-2 bg-gray-50 rounded border text-gray-800 font-mono">{{ $selectedCustomer->id }}</div>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Credit Limit (SR-08)</label>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Credit Limit</label>
                 <div class="p-2 bg-gray-50 rounded border text-gray-800 font-bold">Rp{{ number_format($selectedCustomer->credit_limit, 0, ',', '.') }}</div>
             </div>
             <div>

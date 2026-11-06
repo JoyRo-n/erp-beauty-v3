@@ -12,44 +12,95 @@
             </button>
         </div>
         <div class="text-xs text-gray-400">
-            <span>SR-12 Traceability & Audit Engine</span>
+            <span>Traceability & Audit Trail</span>
         </div>
     </div>
 
     <!-- Related Docs Tab Pane -->
     <div id="pane-related" class="p-4 text-xs">
         @if(isset($relatedDocs) && count($relatedDocs) > 0)
+            @php
+                $chatterRole = session('active_role', auth()->user()->role ?? 'Sales');
+                $accessibleScRoutes = collect(\App\Services\RoleAccessService::getAccessibleShortcuts($chatterRole))->pluck('route')->all();
+            @endphp
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 @foreach($relatedDocs as $doc)
                     @php
-                        $docUrl = '#';
+                        $docUrl = null;
+                        $targetRoute = null;
+                        $docLabel = 'Doc';
+                        $docTypeLabel = 'Document';
+
                         if (!empty($doc->order_number)) {
+                            $targetRoute = 's05.sales';
                             $docUrl = route('s05.sales', ['order' => $doc->order_number]);
+                            $docLabel = $doc->order_number;
+                            $docTypeLabel = 'Sales Order';
                         } elseif (!empty($doc->do_number)) {
+                            $targetRoute = 's07.delivery';
                             $docUrl = route('s07.delivery', ['do' => $doc->do_number]);
-                        } elseif (!empty($doc->invoice_number)) {
+                            $docLabel = $doc->do_number;
+                            $docTypeLabel = 'Delivery Order';
+                        } elseif (!empty($doc->invoice_number) && empty($doc->return_number)) {
+                            $targetRoute = 's08.invoice';
                             $docUrl = route('s08.invoice', ['inv' => $doc->invoice_number]);
-                        } elseif (!empty($doc->po_number)) {
+                            $docLabel = $doc->invoice_number;
+                            $docTypeLabel = 'Customer Invoice';
+                        } elseif (!empty($doc->po_number) && empty($doc->receipt_number) && empty($doc->bill_number)) {
+                            $targetRoute = 's10.purchase';
                             $docUrl = route('s10.purchase', ['po' => $doc->po_number]);
-                        } elseif (!empty($doc->receipt_number)) {
+                            $docLabel = $doc->po_number;
+                            $docTypeLabel = 'Purchase Order';
+                        } elseif (!empty($doc->receipt_number) && empty($doc->bill_number)) {
+                            $targetRoute = 's11.receipt';
                             $docUrl = route('s11.receipt', ['rec' => $doc->receipt_number]);
+                            $docLabel = $doc->receipt_number;
+                            $docTypeLabel = 'Purchase Receipt';
                         } elseif (!empty($doc->bill_number)) {
+                            $targetRoute = 's12.bill';
                             $docUrl = route('s12.bill', ['bill' => $doc->bill_number]);
+                            $docLabel = $doc->bill_number;
+                            $docTypeLabel = 'Vendor Bill';
+                        } elseif (!empty($doc->return_number)) {
+                            $targetRoute = 's15.return';
+                            $docUrl = route('s15.return', ['ret' => $doc->return_number]);
+                            $docLabel = $doc->return_number;
+                            $docTypeLabel = 'Sales Return';
                         } elseif (!empty($doc->treatment_number)) {
+                            $targetRoute = 's17.treatment';
                             $docUrl = route('s17.treatment', ['trt' => $doc->treatment_number]);
+                            $docLabel = $doc->treatment_number;
+                            $docTypeLabel = 'Beauty Treatment';
+                        } elseif (!empty($doc->move_number)) {
+                            $docLabel = $doc->move_number . ' (' . ($doc->reference_doc_id ?? '') . ')';
+                            $docTypeLabel = $doc->reference_doc_type ?? 'Stock Move';
                         }
+
+                        $canOpenDoc = $docUrl && $targetRoute && in_array($targetRoute, $accessibleScRoutes, true);
                     @endphp
-                    <a href="{{ $docUrl }}" class="p-3 bg-gray-50 border border-gray-200 rounded flex items-center justify-between hover:bg-purple-50 hover:border-purple-300 transition group block">
-                        <div>
-                            <div class="font-bold text-gray-800 group-hover:text-purple-700">
-                                {{ $doc->order_number ?? $doc->do_number ?? $doc->invoice_number ?? $doc->po_number ?? $doc->receipt_number ?? $doc->bill_number ?? $doc->treatment_number ?? 'Doc' }}
+                    @if($canOpenDoc)
+                        <a href="{{ $docUrl }}" class="p-3 bg-gray-50 border border-gray-200 rounded flex items-center justify-between hover:bg-purple-50 hover:border-purple-300 transition group block">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{{ $docTypeLabel }}</div>
+                                <div class="font-bold text-gray-800 group-hover:text-purple-700">{{ $docLabel }}</div>
+                                <div class="text-gray-500">
+                                    Status: <span class="font-semibold text-purple-700">{{ $doc->status ?? 'Done' }}</span>
+                                </div>
                             </div>
-                            <div class="text-gray-500">
-                                Status: <span class="font-semibold text-purple-700">{{ $doc->status ?? 'Done' }}</span>
+                            <span class="text-gray-400 group-hover:text-purple-600 transition"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                        </a>
+                    @else
+                        <div class="p-3 bg-gray-50 border border-gray-200 rounded flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{{ $docTypeLabel }}</div>
+                                <div class="font-bold text-gray-800">{{ $docLabel }}</div>
+                                <div class="text-gray-500">
+                                    Status: <span class="font-semibold text-purple-700">{{ $doc->status ?? 'Done' }}</span>
+                                </div>
                             </div>
+                            <span class="text-gray-300" title="Divisi lain"><i class="fa-solid fa-lock"></i></span>
                         </div>
-                        <span class="text-gray-400 group-hover:text-purple-600 transition"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
-                    </a>
+                    @endif
                 @endforeach
             </div>
         @else

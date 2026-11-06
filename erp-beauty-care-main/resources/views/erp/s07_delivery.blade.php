@@ -45,7 +45,7 @@
             @if($selectedDo && $selectedDo->status !== 'Done')
                 <div>
                     <button type="submit" form="form-validate-do" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">
-                        <i class="fa-solid fa-check-double mr-1"></i> Validate Delivery (F-09)
+                        <i class="fa-solid fa-check-double mr-1"></i> Validate Delivery
                     </button>
                 </div>
             @endif
@@ -107,6 +107,8 @@
                     </table>
                 </div>
             </form>
+        @else
+            <div class="text-center py-8 text-gray-400 italic">No delivery orders available yet. Confirm a Sales Order first.</div>
         @endif
     </div>
 

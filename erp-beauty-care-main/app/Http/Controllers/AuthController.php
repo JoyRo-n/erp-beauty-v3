@@ -6,28 +6,39 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\RoleAccessService;
 
 class AuthController extends Controller
 {
     /**
-     * Show Odoo 17 branded Login Screen
+     * Show Odoo 17 branded Login Screen.
+     * Keeps Admin/Owner session intact ONLY when reached via S-01 Matrix inspection (?inspect=1).
      */
     public function showLoginForm(Request $request)
     {
-        if (Auth::check()) {
-            return redirect()->route('s01.home');
+        $targetRole = $request->query('role');
+        $isInspect = $request->boolean('inspect');
+        $authUser = Auth::user();
+
+        if ($authUser) {
+            if (!$isInspect || !RoleAccessService::isSuperRole($authUser->role) || !$targetRole || $targetRole === $authUser->role) {
+                return redirect()->route('s01.home');
+            }
         }
 
+        $currentUser = ($isInspect && $authUser && RoleAccessService::isSuperRole($authUser->role)) ? $authUser : null;
+
         $prefillEmail = $request->query('email', '');
-        $role = $request->query('role');
-        if (!$prefillEmail && $role) {
-            $user = User::where('role', $role)->first();
+        if (!$prefillEmail && $targetRole) {
+            $user = User::where('role', $targetRole)->first();
             if ($user) {
                 $prefillEmail = $user->email;
             }
         }
 
-        return view('auth.login', compact('prefillEmail'));
+        $returnUrl = $request->session()->get('switch_return_url', route('s01.home'));
+
+        return view('auth.login', compact('prefillEmail', 'targetRole', 'currentUser', 'returnUrl', 'isInspect'));
     }
 
     /**
@@ -39,6 +50,15 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
+
+        $isInspect = $request->boolean('inspect');
+        $previousSuperId = null;
+        if ($isInspect) {
+            $previousSuperId = $request->session()->get('origin_super_user_id');
+            if (Auth::check() && RoleAccessService::isSuperRole(Auth::user()->role)) {
+                $previousSuperId = Auth::id();
+            }
+        }
 
         $inputEmail = trim(strtolower($request->input('email')));
         $inputPassword = trim($request->input('password'));
@@ -64,17 +84,33 @@ class AuthController extends Controller
                     $request->session()->regenerate();
                     $user = Auth::user();
                     $request->session()->put('active_role', $user->role);
+                    $request->session()->forget('switch_return_url');
+
+                    if ($isInspect && $previousSuperId && !RoleAccessService::isSuperRole($user->role)) {
+                        $request->session()->put('origin_super_user_id', $previousSuperId);
+                    } else {
+                        $request->session()->forget('origin_super_user_id');
+                    }
 
                     AuditService::log('Login Success', 'Auth', (string) $user->id, "User {$user->name} logged in with role {$user->role}", $user->name, $user->role);
 
-                    return redirect()->intended(route('s01.home'))->with('success', "Selamat datang kembali, {$user->name}! Anda masuk sebagai peran {$user->role}.");
+                    $redirect = $request->filled('target_role')
+                        ? redirect()->route('s01.home')
+                        : redirect()->intended(route('s01.home'));
+
+                    return $redirect->with('success', "Selamat datang kembali, {$user->name}! Anda masuk sebagai peran {$user->role}.");
                 }
             }
         }
 
-        AuditService::log('Login Failed', 'Auth', $request->email, "Failed login attempt for {$request->email}", 'Guest', 'None');
+        AuditService::log('Login Failed', 'Auth', $request->email, "Failed login attempt for {$request->email}", Auth::check() ? Auth::user()->name : 'Guest', Auth::check() ? Auth::user()->role : 'None');
 
-        return redirect()->back()
+        $targetRole = $request->input('target_role');
+        $backRedirect = ($isInspect && Auth::check() && $targetRole)
+            ? redirect()->route('login', ['role' => $targetRole, 'inspect' => 1])
+            : redirect()->back();
+
+        return $backRedirect
             ->withInput($request->only('email'))
             ->with('error', 'Kombinasi Email atau Password salah! Setiap profil memerlukan kunci sandi yang valid untuk mengakses sistem.');
     }
@@ -96,4 +132,3 @@ class AuthController extends Controller
         return redirect()->route('login')->with('success', 'Anda telah berhasil keluar dari sistem ERP NusaGlow.');
     }
 }
-
