@@ -30,10 +30,10 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedDo->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedDo->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedDo->status ?? '') === 'Confirmed' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }}">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedDo->status ?? '') === 'Confirmed' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }}">
                         Confirmed
                     </span>
                     <span class="px-3 py-1 text-xs font-bold {{ ($selectedDo->status ?? '') === 'Done' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-r">
@@ -89,7 +89,7 @@
                         <tbody class="divide-y divide-gray-200">
                             @foreach($selectedDo->lines as $line)
                                 <tr>
-                                    <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->variant_sku }}</td>
+                                    <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->variant_sku }}</td>
                                     <td class="p-2.5">{{ $line->product->name ?? '' }}</td>
                                     <td class="p-2.5 text-center font-bold">{{ $line->demand_qty }}</td>
                                     <td class="p-2.5 text-center font-semibold text-amber-600">{{ $line->reserved_qty }}</td>
@@ -97,7 +97,7 @@
                                         @if($selectedDo->status === 'Done')
                                             <span class="font-bold text-emerald-700 text-sm">{{ $line->done_qty }}</span>
                                         @else
-                                            <input type="number" name="done_qty[{{ $line->variant_sku }}]" value="{{ $line->reserved_qty }}" min="1" max="{{ $line->reserved_qty }}" class="w-20 text-center border rounded p-1 bg-white font-bold text-purple-700 focus:outline-none">
+                                            <input type="number" name="done_qty[{{ $line->variant_sku }}]" value="{{ $line->reserved_qty }}" min="1" max="{{ $line->reserved_qty }}" class="w-20 text-center border rounded p-1 bg-white font-bold text-rose-700 focus:outline-none">
                                         @endif
                                     </td>
                                     <td class="p-2.5 text-center font-bold text-rose-600">{{ $line->backorder_qty }}</td>

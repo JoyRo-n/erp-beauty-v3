@@ -28,7 +28,7 @@
         @if($selectedReturn)
             <div class="border-b pb-4 mb-4 flex justify-between items-start">
                 <div>
-                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-800">Return Document</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-[#FADADD]/80 text-rose-900">Return Document</span>
                     <h2 class="text-2xl font-bold text-gray-800 mt-1 font-mono">{{ $selectedReturn->return_number }}</h2>
                     <div class="text-xs text-gray-500">Origin Invoice: <strong>{{ $selectedReturn->origin_invoice_number }}</strong> &bull; Customer: {{ $selectedReturn->customer_id }}</div>
                 </div>
@@ -57,10 +57,10 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($selectedReturn->lines as $line)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->variant_sku }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->variant_sku }}</td>
                                 <td class="p-2.5 text-center">{{ $line->delivered_qty }}</td>
                                 <td class="p-2.5 text-center">{{ $line->already_returned_qty }}</td>
-                                <td class="p-2.5 text-center font-bold text-purple-900">{{ $line->return_qty }}</td>
+                                <td class="p-2.5 text-center font-bold text-rose-950">{{ $line->return_qty }}</td>
                                 <td class="p-2.5 text-right">Rp{{ number_format($line->unit_price, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right">Rp{{ number_format($line->unit_price * $line->return_qty, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($line->tax_amount, 0, ',', '.') }}</td>
@@ -78,10 +78,10 @@
         @if($canProcessReturn ?? false)
             <div class="mt-8 border-t pt-6">
                 <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                    <i class="fa-solid fa-arrow-rotate-left text-purple-600 mr-2"></i>
+                    <i class="fa-solid fa-arrow-rotate-left text-rose-600 mr-2"></i>
                     Process Customer Return & Credit Note
                 </h3>
-                <form action="{{ route('s15.process') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <form action="{{ route('s15.process') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                     @csrf
                     <div>
                         <label class="block font-medium text-gray-600 mb-1">Origin Invoice</label>
@@ -111,7 +111,7 @@
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow">
+                        <button type="submit" class="w-full bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold py-1.5 px-3 rounded shadow">
                             <i class="fa-solid fa-receipt mr-1"></i> Issue Credit Note
                         </button>
                     </div>

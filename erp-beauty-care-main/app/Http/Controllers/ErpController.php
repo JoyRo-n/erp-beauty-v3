@@ -211,7 +211,7 @@ class ErpController extends Controller
     public function resetBaseline(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Financial Dashboard & AR', 'RESET-SEED');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Financial Dashboard & AR', 'RESET-SEED');
 
         $email = $user->email;
         $role = $user->role;
@@ -263,11 +263,12 @@ class ErpController extends Controller
         ] : [];
 
         // Dynamic Role-based Apps & Shortcuts (Access Control + cross-division grants)
+        RoleAccessService::purgeExpiredGrants();
         $accessibleApps = RoleAccessService::getAccessibleApps($role);
         $accessibleShortcuts = RoleAccessService::getAccessibleShortcuts($role);
-        $adminStaffMatrix = in_array($role, ['Admin', 'Owner']) ? RoleAccessService::getAdminStaffLocatorMatrix() : [];
+        $adminStaffMatrix = RoleAccessService::isSuperRole($role) ? RoleAccessService::getAdminStaffLocatorMatrix() : [];
         $allApps = RoleAccessService::getAllApps();
-        $accessGrants = in_array($role, ['Admin', 'Owner']) ? AccessGrant::orderByDesc('id')->get() : collect();
+        $accessGrants = RoleAccessService::isSuperRole($role) ? AccessGrant::orderByDesc('id')->get() : collect();
 
         return view('erp.s01_home', compact(
             'user', 'bankBalance', 'testJournalsCount', 'recentAudit',
@@ -285,7 +286,7 @@ class ErpController extends Controller
     public function customers(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Sales', 'Finance'], 'Customer & Credit');
+        $this->authorizeRole($user, ['Sales', 'Finance', 'Owner'], 'Customer & Credit');
 
         $customers = Contact::where('contact_type', 'customer')->get();
         $selectedId = $request->input('id', 'C002');
@@ -450,7 +451,7 @@ class ErpController extends Controller
     public function sales(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Sales'], 'Sales Order');
+        $this->authorizeRole($user, ['Sales', 'Owner'], 'Sales Order');
 
         $orders = SalesOrder::with(['customer', 'lines.product'])->latest()->get();
         $selectedNumber = $request->input('order', 'S00006');
@@ -738,7 +739,7 @@ class ErpController extends Controller
     public function invoices(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Customer Invoice');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Customer Invoice');
 
         $invoices = CustomerInvoice::with(['customer', 'lines', 'payments'])->latest()->get();
         $selectedNumber = $request->input('inv', 'INV/2026/00007');
@@ -787,7 +788,7 @@ class ErpController extends Controller
     public function payments(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Customer Payment');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Customer Payment');
         $openInvoices = CustomerInvoice::where('status', 'Posted')->where('open_amount', '>', 0)->get();
         $payments = Payment::where('payment_type', 'customer_payment')->latest()->get();
 
@@ -1049,7 +1050,7 @@ class ErpController extends Controller
     public function bills(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance', 'Purchasing'], 'Vendor Bill');
+        $this->authorizeRole($user, ['Finance', 'Purchasing', 'Owner'], 'Vendor Bill');
         $canPostBill = $this->hasFeatureAccess($user, ['Finance'], 'Vendor Bill');
 
         $bills = VendorBill::with(['vendor', 'lines', 'purchaseOrder'])->latest()->get();
@@ -1099,7 +1100,7 @@ class ErpController extends Controller
     public function generalLedger(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'General Ledger', 'GL-MENU');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'General Ledger', 'GL-MENU');
 
         $entries = JournalEntry::with('items.account')->latest('date')->get();
         $selectedNumber = $request->input('entry', 'JE/2026/OPENING');
@@ -1166,7 +1167,7 @@ class ErpController extends Controller
     public function returns(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Warehouse', 'Finance', 'Sales'], 'Sales Return');
+        $this->authorizeRole($user, ['Warehouse', 'Finance', 'Sales', 'Owner'], 'Sales Return');
         $canProcessReturn = $this->hasFeatureAccess($user, ['Warehouse', 'Finance', 'Inventory'], 'Sales Return')
             || RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order')
             || RoleAccessService::hasGrantForFeature($user->role, 'Customer Invoice');
@@ -1389,7 +1390,7 @@ class ErpController extends Controller
     public function dashboard(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Financial Dashboard & AR', 'S-18');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Financial Dashboard & AR', 'S-18');
 
         $kpis = DashboardService::getScenarioKpi();
 
@@ -1409,7 +1410,7 @@ class ErpController extends Controller
     public function vendorPayments(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Vendor Payment');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Vendor Payment');
         $openBills = VendorBill::where('status', 'Posted')->where('open_amount', '>', 0)->get();
         $payments = Payment::where('payment_type', 'vendor_payment')->latest()->get();
         $selectedBillId = $request->input('bill');
@@ -1448,7 +1449,7 @@ class ErpController extends Controller
     public function runScenarioDemo(Request $request)
     {
         $user = $this->getActiveUser($request);
-        $this->authorizeRole($user, ['Finance'], 'Financial Dashboard & AR', 'DEMO-RUN');
+        $this->authorizeRole($user, ['Finance', 'Owner'], 'Financial Dashboard & AR', 'DEMO-RUN');
 
         $email = $user->email;
         $role = $user->role;

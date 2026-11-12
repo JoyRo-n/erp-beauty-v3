@@ -38,7 +38,7 @@
                     </div>
                     <div>
                         <label class="block font-medium text-gray-600 mb-1">Open Amount (Max Allowed)</label>
-                        <input type="text" value="Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }}" readonly class="w-full border rounded p-2 bg-purple-50 text-purple-900 font-bold">
+                        <input type="text" value="Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }}" readonly class="w-full border rounded p-2 bg-[#FFF2F7] text-rose-950 font-bold">
                     </div>
                     <div>
                         <label class="block font-medium text-gray-600 mb-1">Bank Account</label>
@@ -46,7 +46,7 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block font-medium text-gray-700 mb-1">Payment Amount (Rp)</label>
-                        <input type="number" name="amount" value="{{ $selectedInvoice->open_amount }}" min="1" max="{{ $selectedInvoice->open_amount }}" step="1" class="w-full border-2 border-purple-400 rounded p-2 text-sm font-bold text-purple-900 focus:outline-none">
+                        <input type="number" name="amount" value="{{ $selectedInvoice->open_amount }}" min="1" max="{{ $selectedInvoice->open_amount }}" step="1" class="w-full border-2 border-[#E879A6] rounded p-2 text-sm font-bold text-rose-950 focus:outline-none">
                         <p class="text-gray-400 text-xs mt-1">Entering more than Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }} will be rejected automatically.</p>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                     <a href="{{ route('s08.invoice', ['inv' => $selectedInvoice->invoice_number]) }}" class="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold">
                         Cancel
                     </a>
-                    <button type="submit" class="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow">
+                    <button type="submit" class="px-5 py-2 rounded bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white text-xs font-bold shadow">
                         <i class="fa-solid fa-check mr-1"></i> Confirm Payment
                     </button>
                 </div>
@@ -82,7 +82,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @forelse($payments as $p)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $p->payment_number }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $p->payment_number }}</td>
                                 <td class="p-2.5 text-gray-500">{{ $p->payment_date }}</td>
                                 <td class="p-2.5 font-mono">{{ $p->invoice_id }}</td>
                                 <td class="p-2.5">{{ $p->partner_id }}</td>

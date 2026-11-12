@@ -10,7 +10,7 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Employees & Skill Matrix</span>
             <span class="text-gray-400">|</span>
-            <a href="{{ route('s17.treatment') }}" class="text-xs text-purple-700 hover:underline font-medium">Beauty Treatments</a>
+            <a href="{{ route('s17.treatment') }}" class="text-xs text-rose-700 hover:underline font-medium">Beauty Treatments</a>
         </div>
         <form method="GET" action="{{ route('s16.employee') }}">
             <select name="emp" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -54,10 +54,10 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Skill Matrix</label>
-                    <div class="p-2 bg-purple-50 rounded border border-purple-200 text-purple-900 font-bold flex flex-wrap gap-1">
+                    <div class="p-2 bg-[#FFF2F7] rounded border border-[#F2B6CE] text-rose-950 font-bold flex flex-wrap gap-1">
                         @php $skills = is_array($selectedEmployee->skills) ? $selectedEmployee->skills : explode(';', $selectedEmployee->skills); @endphp
                         @foreach($skills as $s)
-                            <span class="px-2 py-0.5 rounded bg-purple-200 text-purple-800 text-xs">{{ trim($s) }}</span>
+                            <span class="px-2 py-0.5 rounded bg-[#F8C8DC] text-rose-900 text-xs">{{ trim($s) }}</span>
                         @endforeach
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($employees as $e)
                             <tr class="hover:bg-rose-50/40 {{ $selectedEmployee && $selectedEmployee->id === $e->id ? 'bg-rose-50 font-medium' : '' }}">
-                                <td class="p-2.5 font-mono text-purple-700">
+                                <td class="p-2.5 font-mono text-rose-700">
                                     <a href="{{ route('s16.employee', ['emp' => $e->id]) }}">{{ $e->id }}</a>
                                 </td>
                                 <td class="p-2.5 font-semibold">{{ $e->name }}</td>
@@ -114,7 +114,7 @@
                 <i class="fa-solid fa-user-plus text-rose-600 mr-2"></i>
                 Registrasi Karyawan & Matriks Keahlian Baru
             </h3>
-            <form action="{{ route('s16.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <form action="{{ route('s16.create') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 @csrf
                 <div>
                     <label class="block font-medium text-gray-600 mb-1">Nama Lengkap</label>

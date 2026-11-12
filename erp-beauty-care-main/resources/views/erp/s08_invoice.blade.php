@@ -10,9 +10,9 @@
         <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Customer Invoice</span>
             <span class="text-gray-400">|</span>
-            <a href="{{ route('s09.payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Customer Payments</a>
+            <a href="{{ route('s09.payment') }}" class="text-xs text-rose-700 hover:underline font-medium">Customer Payments</a>
             <span class="text-gray-300">&bull;</span>
-            <a href="{{ route('s12.bill') }}" class="text-xs text-purple-700 hover:underline font-medium">Vendor Bills</a>
+            <a href="{{ route('s12.bill') }}" class="text-xs text-rose-700 hover:underline font-medium">Vendor Bills</a>
         </div>
         <form method="GET" action="{{ route('s08.invoice') }}">
             <select name="inv" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -32,7 +32,7 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedInvoice->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedInvoice->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
                     <span class="px-3 py-1 text-xs font-bold {{ ($selectedInvoice->status ?? '') === 'Posted' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600' }}">
@@ -76,7 +76,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Open Balance (AR)</label>
-                    <div class="p-2 bg-purple-50 rounded border border-purple-200 text-purple-900 font-bold">
+                    <div class="p-2 bg-[#FFF2F7] rounded border border-[#F2B6CE] text-rose-950 font-bold">
                         Rp{{ number_format($selectedInvoice->open_amount, 0, ',', '.') }}
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($selectedInvoice->lines as $line)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->item_code }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->item_code }}</td>
                                 <td class="p-2.5">{{ $line->description }}</td>
                                 <td class="p-2.5 text-center font-bold">{{ $line->qty }}</td>
                                 <td class="p-2.5 text-right">Rp{{ number_format($line->unit_price, 0, ',', '.') }}</td>
@@ -118,7 +118,7 @@
                             <td colspan="6" class="p-2.5 text-right text-gray-600">PPN (11% Effective):</td>
                             <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($selectedInvoice->tax_amount, 0, ',', '.') }}</td>
                         </tr>
-                        <tr class="text-sm bg-purple-50 text-purple-900 font-bold">
+                        <tr class="text-sm bg-[#FFF2F7] text-rose-950 font-bold">
                             <td colspan="6" class="p-2.5 text-right">Total Amount:</td>
                             <td class="p-2.5 text-right">Rp{{ number_format($selectedInvoice->total_amount, 0, ',', '.') }}</td>
                         </tr>

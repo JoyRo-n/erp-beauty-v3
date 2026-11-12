@@ -10,11 +10,11 @@
         <div class="flex items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Quotation & Sales Order</span>
             <span class="text-gray-400">|</span>
-            <a href="{{ route('s02.customer') }}" class="text-xs text-purple-700 hover:underline font-medium">Customers</a>
+            <a href="{{ route('s02.customer') }}" class="text-xs text-rose-700 hover:underline font-medium">Customers</a>
             <span class="text-gray-300">&bull;</span>
-            <a href="{{ route('s06.stock') }}" class="text-xs text-purple-700 hover:underline font-medium">Stock Overview</a>
+            <a href="{{ route('s06.stock') }}" class="text-xs text-rose-700 hover:underline font-medium">Stock Overview</a>
             <span class="text-gray-300">&bull;</span>
-            <a href="{{ route('s15.return') }}" class="text-xs text-purple-700 hover:underline font-medium">Returns</a>
+            <a href="{{ route('s15.return') }}" class="text-xs text-rose-700 hover:underline font-medium">Returns</a>
         </div>
         <div class="flex items-center space-x-3">
             <form method="GET" action="{{ route('s05.sales') }}">
@@ -36,13 +36,13 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Document Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Confirmed' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }}">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Confirmed' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }}">
                         Confirmed
                     </span>
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Done' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-r">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedOrder->status ?? '') === 'Done' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-r">
                         Done
                     </span>
                 </div>
@@ -113,7 +113,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($selectedOrder->lines as $line)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->variant_sku }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->variant_sku }}</td>
                                 <td class="p-2.5">{{ $line->product->name ?? '' }}</td>
                                 <td class="p-2.5 text-center font-bold">{{ $line->qty }}</td>
                                 <td class="p-2.5 text-center font-bold text-amber-600">{{ $line->delivered_qty }}</td>
@@ -133,7 +133,7 @@
                             <td colspan="7" class="p-2.5 text-right text-gray-600">PPN (11% Effective):</td>
                             <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($selectedOrder->tax_amount, 0, ',', '.') }}</td>
                         </tr>
-                        <tr class="text-sm bg-purple-50 text-purple-900 font-bold">
+                        <tr class="text-sm bg-[#FFF2F7] text-rose-950 font-bold">
                             <td colspan="7" class="p-2.5 text-right">Total Amount:</td>
                             <td class="p-2.5 text-right">Rp{{ number_format($selectedOrder->total_amount, 0, ',', '.') }}</td>
                         </tr>
@@ -145,10 +145,10 @@
         <!-- Create New Sales Order Form (Interactive Testing) -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <i class="fa-solid fa-cart-plus text-purple-600 mr-2"></i>
+                <i class="fa-solid fa-cart-plus text-rose-600 mr-2"></i>
                 Create New Quotation / Sales Order
             </h3>
-            <form action="{{ route('s05.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <form action="{{ route('s05.create') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                 @csrf
                 <div>
                     <label class="block font-medium text-gray-600 mb-1">Customer</label>
@@ -179,7 +179,7 @@
                     <input type="number" name="discount_percent" value="0" min="0" max="100" class="w-full border rounded p-1.5 bg-white">
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow">
+                    <button type="submit" class="w-full bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold py-1.5 px-3 rounded shadow">
                         <i class="fa-solid fa-check mr-1"></i> Confirm SO
                     </button>
                 </div>

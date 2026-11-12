@@ -17,6 +17,7 @@ Route::post('/reset-baseline', [ErpController::class, 'resetBaseline'])->name('r
 
 // Cross-division access management (Admin/Owner), staff access requests & team notifications
 Route::post('/access/grant', [AccessController::class, 'grant'])->name('access.grant');
+Route::post('/access/revoke-all', [AccessController::class, 'revokeAll'])->name('access.revoke.all');
 Route::post('/access/{id}/revoke', [AccessController::class, 'revoke'])->name('access.revoke');
 Route::post('/access/requests', [AccessController::class, 'submitRequest'])->name('access.request.submit');
 Route::post('/access/requests/{id}/approve', [AccessController::class, 'approveRequest'])->name('access.request.approve');

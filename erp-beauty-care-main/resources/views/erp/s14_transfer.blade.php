@@ -52,7 +52,7 @@
                 <input type="number" name="qty" value="3" min="1" class="w-full border rounded p-2 bg-white font-bold">
             </div>
             <div class="flex items-end">
-                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded shadow">
+                <button type="submit" class="w-full bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold py-2 px-3 rounded shadow">
                     <i class="fa-solid fa-arrows-left-right mr-1"></i> Execute Transfer
                 </button>
             </div>
@@ -77,7 +77,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @forelse($transfers as $t)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $t->transfer_number }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $t->transfer_number }}</td>
                                 <td class="p-2.5 font-medium">{{ $t->from_location }}</td>
                                 <td class="p-2.5 font-medium">{{ $t->to_location }}</td>
                                 <td class="p-2.5 font-mono">{{ $t->variant_sku }}</td>

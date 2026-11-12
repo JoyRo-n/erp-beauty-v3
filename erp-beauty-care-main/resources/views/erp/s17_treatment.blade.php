@@ -30,7 +30,7 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedTreatment->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedTreatment->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
                     <span class="px-3 py-1 text-xs font-bold {{ ($selectedTreatment->status ?? '') === 'Done' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-r">
@@ -91,7 +91,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Therapist (E001 Facial)</label>
-                    <div class="p-2 bg-purple-50 rounded border border-purple-200 text-purple-900 font-bold">
+                    <div class="p-2 bg-[#FFF2F7] rounded border border-[#F2B6CE] text-rose-950 font-bold">
                         {{ $selectedTreatment->employee->name ?? $selectedTreatment->employee_id }} (Qualified)
                     </div>
                 </div>
@@ -117,7 +117,7 @@
             </div>
         @else
             <div class="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                <div class="w-12 h-12 mx-auto rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xl mb-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-[#FADADD]/80 text-rose-700 flex items-center justify-center text-xl mb-3">
                     <i class="fa-solid fa-spa"></i>
                 </div>
                 <h4 class="font-bold text-gray-800 text-sm mb-1">Belum Ada Layanan Treatment</h4>
@@ -125,7 +125,7 @@
                     <p class="text-gray-500 text-xs mb-4">Klik tombol di bawah untuk membuat dan menyelesaikan layanan Glow Facial untuk Rani Kartika (C004) dengan terapis Sinta Maharani (E001), atau jadwalkan layanan baru di formulir bawah.</p>
                     <form action="{{ route('s17.complete', 'TRT/2026/00007') }}" method="POST">
                         @csrf
-                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition">
+                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold text-xs shadow-md transition">
                             <i class="fa-solid fa-sparkles mr-1.5"></i> Selesaikan Treatment TRT/2026/00007
                         </button>
                     </form>
@@ -139,10 +139,10 @@
         @if($canManageTreatment ?? false)
             <div class="mt-8 border-t pt-6">
                 <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                    <i class="fa-solid fa-calendar-plus text-purple-600 mr-2"></i>
+                    <i class="fa-solid fa-calendar-plus text-rose-600 mr-2"></i>
                     Jadwalkan Layanan Treatment Baru (Glow Facial)
                 </h3>
-                <form action="{{ route('s17.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <form action="{{ route('s17.create') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
                     @csrf
                     <div>
                         <label class="block font-medium text-gray-600 mb-1">Pelanggan (Customer)</label>
@@ -165,7 +165,7 @@
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow transition">
+                        <button type="submit" class="w-full bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold py-1.5 px-3 rounded shadow transition">
                             <i class="fa-solid fa-plus mr-1"></i> Buat Treatment (Draft)
                         </button>
                     </div>

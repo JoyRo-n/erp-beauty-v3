@@ -48,46 +48,45 @@ class BackNavigationTest extends TestCase
         $this->assertEquals('Admin', Auth::user()->role);
     }
 
-    public function test_admin_and_owner_matrix_inspect_does_not_terminate_session_and_can_return(): void
+    public function test_master_admin_matrix_inspect_does_not_terminate_session_and_can_return(): void
     {
-        foreach (['Admin', 'Owner'] as $superRole) {
-            $superUser = User::where('role', $superRole)->firstOrFail();
+        $superRole = 'Admin';
+        $superUser = User::where('role', $superRole)->firstOrFail();
 
-            // 1. Admin/Owner clicks "Inspeksi Akses Sales" in Main Admin Matrix (inspect=1) -> session NOT terminated
-            $inspectResponse = $this->actingAs($superUser)
-                ->from('/')
-                ->post('/switch-role', ['role' => 'Sales', 'inspect' => 1, '_browser_flow' => 1]);
+        // 1. Master Admin clicks "Inspeksi Akses Sales" in Main Admin Matrix (inspect=1) -> session NOT terminated
+        $inspectResponse = $this->actingAs($superUser)
+            ->from('/')
+            ->post('/switch-role', ['role' => 'Sales', 'inspect' => 1, '_browser_flow' => 1]);
 
-            $inspectResponse->assertRedirect(route('login', ['role' => 'Sales', 'inspect' => 1]));
-            $this->assertTrue(Auth::check());
-            $this->assertEquals($superRole, Auth::user()->role);
+        $inspectResponse->assertRedirect(route('login', ['role' => 'Sales', 'inspect' => 1]));
+        $this->assertTrue(Auth::check());
+        $this->assertEquals($superRole, Auth::user()->role);
 
-            // 2. Login screen keeps Admin/Owner session alive and shows Kembali button
-            $loginPage = $this->get('/login?role=Sales&inspect=1');
-            $loginPage->assertStatus(200);
-            $loginPage->assertSee('sales@gmail.com');
-            $loginPage->assertSee("Kembali ke {$superRole}");
+        // 2. Login screen keeps Admin session alive and shows Kembali button
+        $loginPage = $this->get('/login?role=Sales&inspect=1');
+        $loginPage->assertStatus(200);
+        $loginPage->assertSee('sales@gmail.com');
+        $loginPage->assertSee("Kembali ke {$superRole}");
 
-            // 3. Pressing Back or Kembali returns directly to Admin/Owner without logout
-            $backToHome = $this->get('/');
-            $backToHome->assertStatus(200);
-            $backToHome->assertSee('inspectStaffRole(', false);
-            $this->assertEquals($superRole, Auth::user()->role);
+        // 3. Pressing Back or Kembali returns directly to Admin without logout
+        $backToHome = $this->get('/');
+        $backToHome->assertStatus(200);
+        $backToHome->assertSee('inspectStaffRole(', false);
+        $this->assertEquals($superRole, Auth::user()->role);
 
-            // 4. Completing staff inspection login preserves return-to-super button
-            $this->post('/login', [
-                'email' => 'sales@gmail.com',
-                'password' => 'sales123',
-                'target_role' => 'Sales',
-                'inspect' => 1,
-            ])->assertRedirect(route('s01.home'));
+        // 4. Completing staff inspection login preserves return-to-super button
+        $this->post('/login', [
+            'email' => 'sales@gmail.com',
+            'password' => 'sales123',
+            'target_role' => 'Sales',
+            'inspect' => 1,
+        ])->assertRedirect(route('s01.home'));
 
-            $this->assertEquals('Sales', Auth::user()->role);
-            $this->get('/')->assertStatus(200)->assertSee("Kembali ke {$superRole}");
+        $this->assertEquals('Sales', Auth::user()->role);
+        $this->get('/')->assertStatus(200)->assertSee("Kembali ke {$superRole}");
 
-            $this->post('/return-super')->assertRedirect(route('s01.home'));
-            $this->assertEquals($superRole, Auth::user()->role);
-        }
+        $this->post('/return-super')->assertRedirect(route('s01.home'));
+        $this->assertEquals($superRole, Auth::user()->role);
     }
 
     public function test_top_right_sidebar_switch_terminates_previous_session_for_staff_and_super_roles(): void

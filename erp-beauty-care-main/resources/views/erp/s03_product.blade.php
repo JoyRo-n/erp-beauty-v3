@@ -78,7 +78,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($products as $p)
                             <tr class="hover:bg-amber-50/40 {{ $p->variant_sku === $selectedProduct->variant_sku ? 'bg-amber-50 font-medium' : '' }}">
-                                <td class="p-2.5 font-mono text-purple-700">
+                                <td class="p-2.5 font-mono text-rose-700">
                                     <a href="{{ route('s03.product', ['sku' => $p->variant_sku]) }}">{{ $p->variant_sku }}</a>
                                 </td>
                                 <td class="p-2.5">{{ $p->name }}</td>
@@ -101,7 +101,7 @@
                 <i class="fa-solid fa-box-archive text-amber-600 mr-2"></i>
                 Tambah Produk / Varian SKU Baru
             </h3>
-            <form action="{{ route('s03.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <form action="{{ route('s03.create') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 @csrf
                 <div>
                     <label class="block font-medium text-gray-600 mb-1">Variant SKU (Unik)</label>

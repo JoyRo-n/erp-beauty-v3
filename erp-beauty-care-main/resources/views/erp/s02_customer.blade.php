@@ -14,7 +14,7 @@
         </div>
         <div class="flex items-center space-x-3">
             <div class="text-xs text-gray-500">
-                Total Opening AR Perusahaan: <strong class="text-purple-700 font-bold">Rp{{ number_format($totalOpeningAr, 0, ',', '.') }}</strong>
+                Total Opening AR Perusahaan: <strong class="text-rose-700 font-bold">Rp{{ number_format($totalOpeningAr, 0, ',', '.') }}</strong>
             </div>
             <!-- Customer Selector -->
             <form method="GET" action="{{ route('s02.customer') }}">
@@ -33,14 +33,14 @@
     <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div class="flex justify-between items-start border-b pb-4 mb-4">
             <div>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700">Customer Profile</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-[#FADADD]/80 text-rose-700">Customer Profile</span>
                 <h2 class="text-2xl font-bold text-gray-800 mt-1">{{ $selectedCustomer->id }} — {{ $selectedCustomer->name }}</h2>
                 <div class="text-xs text-gray-500">{{ $selectedCustomer->type }} &bull; {{ $selectedCustomer->city }}</div>
             </div>
             <!-- Credit Exposure Metric Card (DL-05) -->
-            <div class="text-right bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div class="text-right bg-[#FFF2F7] border border-[#F2B6CE] rounded-lg p-3">
                 <div class="text-xs text-gray-500">Calculated Credit Exposure</div>
-                <div class="text-xl font-bold {{ $exposure > $selectedCustomer->credit_limit ? 'text-rose-600' : 'text-purple-700' }}">
+                <div class="text-xl font-bold {{ $exposure > $selectedCustomer->credit_limit ? 'text-rose-600' : 'text-rose-700' }}">
                     Rp{{ number_format($exposure, 0, ',', '.') }}
                 </div>
                 <div class="text-xs {{ $exposure > $selectedCustomer->credit_limit ? 'text-rose-600 font-bold' : 'text-gray-500' }}">
@@ -86,8 +86,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach($customers as $c)
-                            <tr class="hover:bg-purple-50/50 {{ $c->id === $selectedCustomer->id ? 'bg-purple-50 font-medium' : '' }}">
-                                <td class="p-2.5 font-mono text-purple-700">
+                            <tr class="hover:bg-[#FFF2F7]/80 {{ $c->id === $selectedCustomer->id ? 'bg-[#FFF2F7] font-medium' : '' }}">
+                                <td class="p-2.5 font-mono text-rose-700">
                                     <a href="{{ route('s02.customer', ['id' => $c->id]) }}">{{ $c->id }}</a>
                                 </td>
                                 <td class="p-2.5">{{ $c->name }}</td>
@@ -106,10 +106,10 @@
         <!-- Create New Customer Form (Interactive Addition) -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <i class="fa-solid fa-user-plus text-purple-600 mr-2"></i>
+                <i class="fa-solid fa-user-plus text-rose-600 mr-2"></i>
                 Tambah Kontak Pelanggan Baru (Master Customer)
             </h3>
-            <form action="{{ route('s02.create') }}" method="POST" class="bg-gray-50 p-4 rounded-lg border text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <form action="{{ route('s02.create') }}" method="POST" class="bg-gradient-to-r from-[#FFF5F8] via-[#FFF9FB] to-white p-4 rounded-xl border border-[#F2C6D8] text-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                 @csrf
                 <div>
                     <label class="block font-medium text-gray-600 mb-1">Nama Pelanggan</label>
@@ -138,7 +138,7 @@
                             <option value="Net 30">Net 30</option>
                             <option value="Immediate">Immediate</option>
                         </select>
-                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded shadow transition whitespace-nowrap">
+                        <button type="submit" class="bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold py-1.5 px-3 rounded shadow transition whitespace-nowrap">
                             <i class="fa-solid fa-plus mr-1"></i> Simpan
                         </button>
                     </div>

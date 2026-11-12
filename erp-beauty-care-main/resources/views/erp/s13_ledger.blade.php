@@ -10,11 +10,11 @@
         <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Journal Entries & General Ledger</span>
             <span class="text-gray-400">|</span>
-            <a href="{{ route('s18.dashboard') }}" class="text-xs text-purple-700 hover:underline font-medium">Operational Dashboard</a>
+            <a href="{{ route('s18.dashboard') }}" class="text-xs text-rose-700 hover:underline font-medium">Operational Dashboard</a>
             <span class="text-gray-300">&bull;</span>
-            <a href="{{ route('s19.vendor_payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Vendor Payments</a>
+            <a href="{{ route('s19.vendor_payment') }}" class="text-xs text-rose-700 hover:underline font-medium">Vendor Payments</a>
             <span class="text-gray-300">&bull;</span>
-            <a href="{{ route('s09.payment') }}" class="text-xs text-purple-700 hover:underline font-medium">Customer Payments</a>
+            <a href="{{ route('s09.payment') }}" class="text-xs text-rose-700 hover:underline font-medium">Customer Payments</a>
         </div>
         <form method="GET" action="{{ route('s13.ledger') }}">
             <select name="entry" onchange="this.form.submit()" class="text-xs border rounded p-1.5 bg-gray-50 focus:outline-none">
@@ -38,7 +38,7 @@
                 </div>
                 <div class="text-right">
                     <div class="text-xs text-gray-500">Debit / Credit Total</div>
-                    <div class="text-lg font-bold text-purple-700 font-mono">Rp{{ number_format($selectedEntry->total_debit, 0, ',', '.') }}</div>
+                    <div class="text-lg font-bold text-rose-700 font-mono">Rp{{ number_format($selectedEntry->total_debit, 0, ',', '.') }}</div>
                     <div class="text-xs text-emerald-600 font-semibold"><i class="fa-solid fa-scale-balanced mr-1"></i> Balanced (Diff: 0)</div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($selectedEntry->items as $item)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $item->account_code }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $item->account_code }}</td>
                                 <td class="p-2.5 font-medium">{{ $item->account->name ?? '' }}</td>
                                 <td class="p-2.5 text-gray-600">{{ $item->description }}</td>
                                 <td class="p-2.5 text-right font-mono {{ $item->debit > 0 ? 'font-bold text-gray-800' : 'text-gray-400' }}">
@@ -70,7 +70,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                    <tfoot class="bg-purple-50 text-purple-900 font-bold border-t">
+                    <tfoot class="bg-[#FFF2F7] text-rose-950 font-bold border-t">
                         <tr>
                             <td colspan="3" class="p-2.5 text-right">Totals:</td>
                             <td class="p-2.5 text-right font-mono">Rp{{ number_format($selectedEntry->total_debit, 0, ',', '.') }}</td>
@@ -99,8 +99,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach($entries as $e)
-                            <tr class="hover:bg-purple-50/40 {{ $selectedEntry && $selectedEntry->entry_number === $e->entry_number ? 'bg-purple-50 font-medium' : '' }}">
-                                <td class="p-2.5 font-mono text-purple-700">
+                            <tr class="hover:bg-[#FFF2F7]/70 {{ $selectedEntry && $selectedEntry->entry_number === $e->entry_number ? 'bg-[#FFF2F7] font-medium' : '' }}">
+                                <td class="p-2.5 font-mono text-rose-700">
                                     <a href="{{ route('s13.ledger', ['entry' => $e->entry_number]) }}">{{ $e->entry_number }}</a>
                                 </td>
                                 <td class="p-2.5 text-gray-500">{{ $e->date }}</td>

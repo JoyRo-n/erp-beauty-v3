@@ -30,7 +30,7 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedReceipt->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedReceipt->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
                     <span class="px-3 py-1 text-xs font-bold {{ ($selectedReceipt->status ?? '') === 'Done' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-r">
@@ -85,7 +85,7 @@
                         <tbody class="divide-y divide-gray-200">
                             @foreach($selectedReceipt->lines as $line)
                                 <tr>
-                                    <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->variant_sku }}</td>
+                                    <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->variant_sku }}</td>
                                     <td class="p-2.5">{{ $line->product->name ?? '' }}</td>
                                     <td class="p-2.5 text-center font-bold" id="ordered-{{ $line->variant_sku }}">{{ $line->ordered_qty }}</td>
                                     <td class="p-2.5 text-center">

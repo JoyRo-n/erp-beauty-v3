@@ -12,6 +12,7 @@ class AccessGrant extends Model
 
     protected $casts = [
         'created_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 }
 

@@ -30,7 +30,7 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status:</span>
                 <div class="inline-flex rounded-md shadow-sm">
-                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedBill->status ?? '') === 'Draft' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
+                    <span class="px-3 py-1 text-xs font-bold {{ ($selectedBill->status ?? '') === 'Draft' ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white' : 'bg-gray-100 text-gray-600' }} rounded-l">
                         Draft
                     </span>
                     <span class="px-3 py-1 text-xs font-bold {{ ($selectedBill->status ?? '') === 'Posted' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600' }}">
@@ -80,7 +80,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Open AP</label>
-                    <div class="p-2 bg-purple-50 rounded border border-purple-200 text-purple-900 font-bold">
+                    <div class="p-2 bg-[#FFF2F7] rounded border border-[#F2B6CE] text-rose-950 font-bold">
                         Rp{{ number_format($selectedBill->open_amount, 0, ',', '.') }}
                     </div>
                 </div>
@@ -104,11 +104,11 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($selectedBill->lines as $line)
                             <tr>
-                                <td class="p-2.5 font-mono font-bold text-purple-700">{{ $line->variant_sku }}</td>
+                                <td class="p-2.5 font-mono font-bold text-rose-700">{{ $line->variant_sku }}</td>
                                 <td class="p-2.5 text-center">{{ $line->po_qty }}</td>
                                 <td class="p-2.5 text-center font-bold text-emerald-700">{{ $line->accepted_qty }}</td>
                                 <td class="p-2.5 text-center">{{ $line->already_billed_qty }}</td>
-                                <td class="p-2.5 text-center font-bold text-purple-800">{{ $line->bill_qty }}</td>
+                                <td class="p-2.5 text-center font-bold text-rose-900">{{ $line->bill_qty }}</td>
                                 <td class="p-2.5 text-right">Rp{{ number_format($line->unit_cost, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($line->tax_amount, 0, ',', '.') }}</td>
                                 <td class="p-2.5 text-right font-bold text-gray-800">Rp{{ number_format($line->subtotal, 0, ',', '.') }}</td>
@@ -124,7 +124,7 @@
                             <td colspan="7" class="p-2.5 text-right text-gray-600">PPN Masukan (Input VAT 11%):</td>
                             <td class="p-2.5 text-right text-gray-600">Rp{{ number_format($selectedBill->tax_amount, 0, ',', '.') }}</td>
                         </tr>
-                        <tr class="text-sm bg-purple-50 text-purple-900 font-bold">
+                        <tr class="text-sm bg-[#FFF2F7] text-rose-950 font-bold">
                             <td colspan="7" class="p-2.5 text-right">Total Accounts Payable (AP):</td>
                             <td class="p-2.5 text-right">Rp{{ number_format($selectedBill->total_amount, 0, ',', '.') }}</td>
                         </tr>

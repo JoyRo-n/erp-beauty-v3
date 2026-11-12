@@ -9,62 +9,68 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --odoo-primary: #714B67;
-            --odoo-dark: #5A3C52;
-            --odoo-bg: #F0F2F5;
+            --odoo-primary: #E879A6;
+            --odoo-dark: #D65C8C;
+            --odoo-bg: #FFFBFD;
+        }
+        html {
+            font-size: clamp(13.5px, 0.32vw + 11.8px, 18px);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--odoo-bg);
+            background: linear-gradient(180deg, #FFF4F8 0%, #FFFBFD 45%, #FFF2F7 100%);
+            overflow-x: hidden;
         }
         .odoo-bg-primary {
-            background-color: var(--odoo-primary);
+            background: linear-gradient(90deg, #FFF0F5 0%, #FADADD 50%, #F8C8DC 100%);
+            border-bottom: 1px solid #F2B6CE;
+            box-shadow: 0 3px 12px -2px rgba(232, 121, 166, 0.18);
         }
         .odoo-btn-primary {
-            background-color: var(--odoo-primary);
+            background: linear-gradient(90deg, #EC709F 0%, #D95386 100%);
             color: white;
         }
         .odoo-btn-primary:hover {
-            background-color: var(--odoo-dark);
+            background: linear-gradient(90deg, #DF5D8E 0%, #C74174 100%);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between text-gray-800">
 
     <!-- Top Navigation Header -->
-    <header class="odoo-bg-primary text-white h-12 flex items-center justify-between px-6 shadow">
+    <header class="odoo-bg-primary text-rose-950 h-14 flex items-center justify-between px-6">
         <div class="flex items-center space-x-3">
-            <span class="w-7 h-7 rounded bg-white/20 flex items-center justify-center font-bold text-sm">
-                <i class="fa-solid fa-gem text-pink-200"></i>
+            <span class="w-8 h-8 rounded-lg bg-white/80 border border-pink-200 flex items-center justify-center font-bold text-sm shadow-sm">
+                <i class="fa-solid fa-spa text-rose-500"></i>
             </span>
-            <span class="font-bold text-sm tracking-wide">PT Arunika Beauty Nusantara</span>
-            <span class="text-xs text-purple-200 opacity-80 hidden sm:inline">&bull; NusaGlow ERP Web App</span>
+            <span class="font-bold text-sm tracking-wide text-rose-950">PT Arunika Beauty Nusantara</span>
+            <span class="text-xs text-rose-700/80 hidden sm:inline">&bull; NusaGlow ERP Web App</span>
         </div>
-        <div class="text-xs text-purple-100 flex items-center space-x-3">
+        <div class="text-xs text-rose-900 flex items-center space-x-3">
             @if(!empty($currentUser))
-                <a href="{{ $returnUrl ?? route('s01.home') }}" class="bg-white/20 hover:bg-white/30 text-white font-semibold px-3 py-1 rounded transition flex items-center space-x-1.5">
+                <a href="{{ $returnUrl ?? route('s01.home') }}" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-arrow-left text-[11px]"></i>
                     <span>Kembali ke {{ $currentUser->role }}</span>
                 </a>
             @endif
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-lock text-xs"></i>
-                <span class="font-semibold">Access Control & Security</span>
+            <div class="flex items-center space-x-2 bg-white/75 border border-pink-200 px-3 py-1 rounded-full shadow-sm">
+                <i class="fa-solid fa-lock text-xs text-rose-500"></i>
+                <span class="font-semibold text-rose-900">Access Control & Security</span>
             </div>
         </div>
     </header>
 
     <!-- Main Container: Centered Clean Professional Card -->
     <main class="flex-1 flex items-center justify-center py-12 px-4">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#F2B6CE] overflow-hidden">
             
             <!-- Card Header -->
-            <div class="bg-gradient-to-r from-purple-800 to-indigo-800 p-7 text-white text-center relative">
-                <div class="w-16 h-16 mx-auto rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-3xl shadow-inner mb-3">
-                    <i class="fa-solid fa-shield-halved text-pink-300"></i>
+            <div class="bg-gradient-to-br from-[#FFF5F8] via-[#FADADD] to-[#F4B8CE] p-7 text-rose-950 text-center relative border-b border-[#EDA4C0]">
+                <div class="w-16 h-16 mx-auto rounded-full bg-white/85 border border-pink-200 backdrop-blur flex items-center justify-center text-3xl shadow-sm mb-3">
+                    <i class="fa-solid fa-shield-halved text-rose-500"></i>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight">Portal Masuk Karyawan</h1>
-                <p class="text-xs text-purple-200 mt-1">Gunakan email & kata sandi resmi untuk membuka akses modul</p>
+                <h1 class="text-xl font-bold tracking-tight text-rose-950">Portal Masuk Karyawan</h1>
+                <p class="text-xs text-rose-800/85 mt-1">Gunakan email & kata sandi resmi untuk membuka akses modul</p>
             </div>
 
             <!-- Form Content -->
@@ -101,15 +107,15 @@
                 @endif
 
                 @if(!empty($currentUser))
-                    <div class="mb-5 p-3.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-center justify-between gap-3">
+                    <div class="mb-5 p-3.5 rounded-xl bg-gradient-to-r from-[#FFF0F5] to-[#FADADD]/75 border border-[#F2B6CE] text-rose-950 text-xs flex items-center justify-between gap-3 shadow-xs">
                         <div>
                             <div class="font-bold flex items-center space-x-1.5">
-                                <i class="fa-solid fa-user-shield text-purple-700"></i>
+                                <i class="fa-solid fa-user-shield text-rose-600"></i>
                                 <span>Mode Inspeksi: {{ $currentUser->name }} ({{ $currentUser->role }})</span>
                             </div>
-                            <div class="text-[11px] text-purple-700 mt-0.5">Salah pilih akun staf? Kembali tanpa mengakhiri sesi {{ $currentUser->role }} Anda.</div>
+                            <div class="text-[11px] text-rose-700/90 mt-0.5">Salah pilih akun staf? Kembali tanpa mengakhiri sesi {{ $currentUser->role }} Anda.</div>
                         </div>
-                        <a href="{{ $returnUrl ?? route('s01.home') }}" class="flex-shrink-0 bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
+                        <a href="{{ $returnUrl ?? route('s01.home') }}" class="flex-shrink-0 bg-gradient-to-r from-[#EC709F] to-[#D95386] hover:from-[#DF5D8E] hover:to-[#C74174] text-white font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
                             <i class="fa-solid fa-arrow-left text-[10px]"></i>
                             <span>Kembali</span>
                         </a>
@@ -123,8 +129,8 @@
                     
                     <!-- Email Field -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">
-                            <i class="fa-solid fa-envelope text-gray-400 mr-1.5"></i> Email Karyawan
+                        <label class="block text-xs font-semibold text-rose-900 mb-1.5">
+                            <i class="fa-solid fa-envelope text-rose-400 mr-1.5"></i> Email Karyawan
                         </label>
                         <input 
                             type="email" 
@@ -134,7 +140,7 @@
                             required 
                             autofocus
                             placeholder="warehouse@gmail.com" 
-                            class="w-full text-sm px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition bg-gray-50 focus:bg-white"
+                            class="w-full text-sm px-4 py-2.5 border border-pink-200 rounded-lg focus:ring-2 focus:ring-[#E879A6] focus:border-[#E879A6] outline-none transition bg-[#FFF8FB] focus:bg-white text-rose-950"
                         >
                         @error('email')
                             <p class="text-rose-600 text-xs mt-1">{{ $message }}</p>
@@ -143,8 +149,8 @@
 
                     <!-- Password Field -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">
-                            <i class="fa-solid fa-key text-gray-400 mr-1.5"></i> Kata Sandi (Password)
+                        <label class="block text-xs font-semibold text-rose-900 mb-1.5">
+                            <i class="fa-solid fa-key text-rose-400 mr-1.5"></i> Kata Sandi (Password)
                         </label>
                         <div class="relative">
                             <input 
@@ -153,9 +159,9 @@
                                 id="login-password" 
                                 required 
                                 placeholder="Masukkan kata sandi akun" 
-                                class="w-full text-sm px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition bg-gray-50 focus:bg-white pr-10"
+                                class="w-full text-sm px-4 py-2.5 border border-pink-200 rounded-lg focus:ring-2 focus:ring-[#E879A6] focus:border-[#E879A6] outline-none transition bg-[#FFF8FB] focus:bg-white text-rose-950 pr-10"
                             >
-                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-rose-400 hover:text-rose-600 focus:outline-none p-1">
                                 <i class="fa-solid fa-eye text-xs" id="pwd-eye-icon"></i>
                             </button>
                         </div>
@@ -165,9 +171,9 @@
                     </div>
 
                     <!-- Remember Me Checkbox -->
-                    <div class="flex items-center justify-between text-xs text-gray-600 pt-1">
+                    <div class="flex items-center justify-between text-xs text-rose-800/80 pt-1">
                         <label class="flex items-center space-x-2 cursor-pointer select-none">
-                            <input type="checkbox" name="remember" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                            <input type="checkbox" name="remember" class="rounded border-pink-300 text-rose-500 focus:ring-rose-400 accent-rose-500">
                             <span>Ingat sesi saya di perangkat ini</span>
                         </label>
                     </div>
@@ -176,7 +182,7 @@
                     <button 
                         type="submit" 
                         id="login-submit-btn" 
-                        class="w-full odoo-btn-primary font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 text-sm mt-2"
+                        class="w-full odoo-btn-primary font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 text-sm mt-2"
                     >
                         <i class="fa-solid fa-right-to-bracket text-sm"></i>
                         <span>Buka Kunci & Masuk Dashboard</span>
@@ -185,7 +191,7 @@
             </div>
 
             <!-- Card Footer -->
-            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center text-xs text-gray-500">
+            <div class="p-4 bg-gradient-to-r from-[#FFF5F8] via-[#FADADD]/45 to-[#FFF5F8] border-t border-pink-200 text-center text-xs text-rose-800/85">
                 <i class="fa-solid fa-lock text-emerald-600 mr-1"></i>
                 Setiap admin wajib mengetahui email dan kata sandi akun pribadinya
             </div>
@@ -194,7 +200,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-3 text-center text-xs text-gray-400">
+    <footer class="bg-gradient-to-r from-[#FFF5F8] via-[#FADADD]/45 to-[#FFF5F8] border-t border-[#F2B6CE] py-3 text-center text-xs text-rose-700/80">
         &copy; 2026 PT Arunika Beauty Nusantara (NusaGlow). All rights reserved.
     </footer>
 

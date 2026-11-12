@@ -10,16 +10,16 @@
         <div class="flex flex-wrap items-center space-x-2">
             <span class="font-bold text-gray-700 text-sm">Stock Overview & Reservation</span>
             <span class="text-gray-400">|</span>
-            <a href="{{ route('s03.product') }}" class="text-xs text-purple-700 hover:underline font-medium">Products</a>
+            <a href="{{ route('s03.product') }}" class="text-xs text-rose-700 hover:underline font-medium">Products</a>
             @if(in_array($user->role, ['Admin', 'Owner', 'Warehouse', 'Inventory']) || \App\Services\RoleAccessService::hasGrantForFeature($user->role, 'Delivery Order'))
                 <span class="text-gray-300">&bull;</span>
-                <a href="{{ route('s07.delivery') }}" class="text-xs text-purple-700 hover:underline font-medium">Deliveries</a>
+                <a href="{{ route('s07.delivery') }}" class="text-xs text-rose-700 hover:underline font-medium">Deliveries</a>
                 <span class="text-gray-300">&bull;</span>
-                <a href="{{ route('s11.receipt') }}" class="text-xs text-purple-700 hover:underline font-medium">Receipts</a>
+                <a href="{{ route('s11.receipt') }}" class="text-xs text-rose-700 hover:underline font-medium">Receipts</a>
                 <span class="text-gray-300">&bull;</span>
-                <a href="{{ route('s14.transfer') }}" class="text-xs text-purple-700 hover:underline font-medium">Transfers</a>
+                <a href="{{ route('s14.transfer') }}" class="text-xs text-rose-700 hover:underline font-medium">Transfers</a>
                 <span class="text-gray-300">&bull;</span>
-                <a href="{{ route('s10.purchase') }}" class="text-xs text-purple-700 hover:underline font-medium">POs</a>
+                <a href="{{ route('s10.purchase') }}" class="text-xs text-rose-700 hover:underline font-medium">POs</a>
             @endif
         </div>
         <div class="flex items-center space-x-4 text-xs">
@@ -60,7 +60,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($whJktStocks as $stock)
                             <tr class="hover:bg-blue-50/30 {{ $stock->variant_sku === 'BC-CLN-100' ? 'bg-amber-50/50' : '' }}">
-                                <td class="p-2 font-mono font-bold text-purple-700">{{ $stock->variant_sku }}</td>
+                                <td class="p-2 font-mono font-bold text-rose-700">{{ $stock->variant_sku }}</td>
                                 <td class="p-2">{{ $stock->product->name ?? '' }}</td>
                                 <td class="p-2 text-center font-semibold">{{ $stock->on_hand }}</td>
                                 <td class="p-2 text-center font-semibold text-amber-600">{{ $stock->reserved }}</td>
@@ -94,8 +94,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach($stBdgStocks as $stock)
-                            <tr class="hover:bg-pink-50/30 {{ $stock->variant_sku === 'BC-MSK-001' ? 'bg-purple-50/50' : '' }}">
-                                <td class="p-2 font-mono font-bold text-purple-700">{{ $stock->variant_sku }}</td>
+                            <tr class="hover:bg-pink-50/30 {{ $stock->variant_sku === 'BC-MSK-001' ? 'bg-[#FFF2F7]/70' : '' }}">
+                                <td class="p-2 font-mono font-bold text-rose-700">{{ $stock->variant_sku }}</td>
                                 <td class="p-2">{{ $stock->product->name ?? '' }}</td>
                                 <td class="p-2 text-center font-semibold">{{ $stock->on_hand }}</td>
                                 <td class="p-2 text-center font-semibold text-amber-600">{{ $stock->reserved }}</td>

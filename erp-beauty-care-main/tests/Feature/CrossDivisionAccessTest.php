@@ -21,20 +21,58 @@ class CrossDivisionAccessTest extends TestCase
         return $this->actingAs(User::where('role', $role)->firstOrFail());
     }
 
-    public function test_admin_and_owner_can_open_every_division_screen(): void
+    public function test_admin_can_open_every_division_screen_while_owner_is_scoped_to_financial_and_profit_screens(): void
     {
-        $urls = [
+        $allUrls = [
             '/customers', '/products', '/crm', '/sales', '/inventory/stock', '/inventory/delivery',
             '/invoicing/customer', '/accounting/payments', '/purchase/orders', '/inventory/receipts',
             '/accounting/bills', '/accounting/general-ledger', '/inventory/transfers', '/sales/returns',
             '/employees', '/studio/treatments', '/accounting/dashboard', '/accounting/vendor-payments',
         ];
 
-        foreach (['Admin', 'Owner'] as $role) {
-            foreach ($urls as $url) {
-                $this->as($role)->get($url)->assertStatus(200, "{$role} should open {$url}");
-            }
+        // Master Admin retains unrestricted access to all 18 screens
+        foreach ($allUrls as $url) {
+            $this->as('Admin')->get($url)->assertStatus(200, "Admin should open {$url}");
         }
+
+        // Owner can ONLY check screens correlated to business financial, credit, revenue, cost & profit
+        $ownerFinancialUrls = [
+            '/customers',                  // S-02 Customer Credit & AR Exposure
+            '/sales',                      // S-05 Sales Revenue Orders
+            '/invoicing/customer',         // S-08 Customer Invoices
+            '/accounting/payments',        // S-09 Customer Cash Inflows
+            '/accounting/bills',           // S-12 Vendor Bills & Cost
+            '/accounting/general-ledger',  // S-13 General Ledger
+            '/sales/returns',              // S-15 Credit Notes & Revenue Adjustments
+            '/accounting/dashboard',       // S-18 Profit, Revenue, COGS & KPI Dashboard
+            '/accounting/vendor-payments', // S-19 Vendor Cash Outflows & AP
+        ];
+
+        foreach ($ownerFinancialUrls as $url) {
+            $this->as('Owner')->get($url)->assertStatus(200, "Owner should open financial/profit screen {$url}");
+        }
+
+        // Owner is blocked from non-financial operational screens (Warehouse, CRM, Purchasing RFQ, Studio HR/Treatments)
+        $ownerBlockedOperationalUrls = [
+            '/products', '/crm', '/inventory/stock', '/inventory/delivery',
+            '/purchase/orders', '/inventory/receipts', '/inventory/transfers',
+            '/employees', '/studio/treatments',
+        ];
+
+        foreach ($ownerBlockedOperationalUrls as $url) {
+            $this->as('Owner')->get($url)->assertStatus(403, "Owner should be blocked from non-financial screen {$url}");
+        }
+
+        // On S-01 Home, Admin sees the Main Admin Staff Matrix while Owner sees Executive Financial & Profit Access without the Admin Matrix
+        $this->as('Admin')->get('/')
+            ->assertOk()
+            ->assertSee('Main Admin: Matriks & Inspeksi Hak Akses Staf Divisi', false)
+            ->assertSee('Main Admin Full Access', false);
+
+        $this->as('Owner')->get('/')
+            ->assertOk()
+            ->assertSee('Executive Financial &amp; Profit Access', false)
+            ->assertDontSee('Main Admin: Matriks & Inspeksi Hak Akses Staf Divisi', false);
     }
 
     public function test_admin_can_post_documents_of_other_divisions(): void
@@ -88,16 +126,21 @@ class CrossDivisionAccessTest extends TestCase
         $this->assertEquals(0, AppNotification::where('recipient_role', 'Warehouse')->whereNull('read_at')->count());
     }
 
-    public function test_only_admin_or_owner_can_manage_access(): void
+    public function test_only_master_admin_can_manage_access(): void
     {
         $this->as('Sales')->post('/access/grant', [
             'grantee_role' => 'Sales',
             'apps' => ['accounting'],
         ])->assertStatus(403);
 
+        $this->as('Owner')->post('/access/grant', [
+            'grantee_role' => 'Sales',
+            'apps' => ['accounting'],
+        ])->assertStatus(403);
+
         $this->assertEquals(0, AccessGrant::count());
 
-        $this->as('Owner')->post('/access/grant', [
+        $this->as('Admin')->post('/access/grant', [
             'grantee_role' => 'Sales',
             'apps' => ['accounting'],
         ])->assertRedirect(route('s01.home'));
@@ -304,6 +347,62 @@ class CrossDivisionAccessTest extends TestCase
 
         $this->assertEquals('Rejected', $req2->fresh()->status);
         $this->assertDatabaseMissing('access_grants', ['grantee_role' => 'Warehouse', 'app_key' => 'purchase']);
+    }
+
+    public function test_temporary_access_can_be_deleted_individually_in_bulk_or_auto_expire(): void
+    {
+        // 1. Grant with temporary duration_hours = 4 -> sets expires_at; auto-expires once past expires_at
+        $this->as('Sales')->from('/')->post('/access/requests', [
+            'app_key' => 'accounting',
+            'reason' => 'Short audit window',
+        ]);
+        $req = \App\Models\AccessRequest::firstOrFail();
+
+        $this->as('Admin')->from('/')->post("/access/requests/{$req->id}/approve", [
+            'duration_hours' => 4,
+            'review_note' => '4 hours only',
+        ])->assertRedirect('/');
+
+        $grant = AccessGrant::where('grantee_role', 'Sales')->where('app_key', 'accounting')->firstOrFail();
+        $this->assertNotNull($grant->expires_at);
+        $this->as('Sales')->get('/accounting/general-ledger')->assertStatus(200);
+
+        // Simulate time passing beyond expires_at -> access automatically purged and request marked Expired
+        $grant->update(['expires_at' => now()->subMinute()]);
+        $this->as('Sales')->get('/accounting/general-ledger')->assertStatus(403);
+        $this->assertDatabaseMissing('access_grants', ['id' => $grant->id]);
+        $this->assertEquals('Expired', $req->fresh()->status);
+
+        // 2. Individual delete from side drawer (from_drawer=1) deletes grant and marks Approved request Revoked
+        $this->as('Sales')->from('/')->post('/access/requests', [
+            'app_key' => 'accounting',
+            'reason' => 'Follow-up check',
+        ]);
+        $req2 = \App\Models\AccessRequest::where('status', 'Pending')->firstOrFail();
+        $this->as('Admin')->from('/')->post("/access/requests/{$req2->id}/approve", [
+            'duration_hours' => 24,
+        ]);
+        $grant2 = AccessGrant::where('grantee_role', 'Sales')->where('app_key', 'accounting')->firstOrFail();
+
+        $this->as('Admin')->from('/')->post("/access/{$grant2->id}/revoke", [
+            'from_drawer' => 1,
+        ])->assertRedirect('/');
+        $this->assertDatabaseMissing('access_grants', ['id' => $grant2->id]);
+        $this->assertEquals('Revoked', $req2->fresh()->status);
+        $this->as('Sales')->get('/accounting/general-ledger')->assertStatus(403);
+
+        // 3. Bulk delete (revokeAll) clears all active temporary access grants at once
+        $this->as('Admin')->post('/access/grant', [
+            'grantee_role' => 'Warehouse',
+            'apps' => ['accounting', 'purchase'],
+            'duration_hours' => 8,
+        ])->assertRedirect(route('s01.home'));
+        $this->assertEquals(2, AccessGrant::count());
+
+        $this->as('Sales')->post('/access/revoke-all')->assertStatus(403);
+        $this->as('Admin')->post('/access/revoke-all')->assertRedirect(route('s01.home'));
+        $this->assertEquals(0, AccessGrant::count());
+        $this->as('Warehouse')->get('/accounting/general-ledger')->assertStatus(403);
     }
 }
 
