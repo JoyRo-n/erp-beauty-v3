@@ -26,8 +26,8 @@ try {
     // Copy pre-seeded SQLite database to writable /tmp/database.sqlite on cold start
     $sourceDb = __DIR__ . '/../database/database.sqlite';
     $tmpDb = '/tmp/database.sqlite';
-    if (!file_exists($tmpDb)) {
-        if (file_exists($sourceDb)) {
+    if (!file_exists($tmpDb) || filesize($tmpDb) < 4096) {
+        if (file_exists($sourceDb) && filesize($sourceDb) > 4096) {
             @copy($sourceDb, $tmpDb);
         } else {
             @touch($tmpDb);
@@ -35,7 +35,7 @@ try {
         @chmod($tmpDb, 0666);
     }
 
-    // Force serverless-compatible environment variables (redirect bootstrap caches to writable /tmp)
+    // Force serverless-compatible environment variables
     $envOverrides = [
         'APP_NAME' => 'NusaGlow ERP',
         'APP_ENV' => 'local',
@@ -67,7 +67,19 @@ try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
     $app->useStoragePath($tmpStorage);
 
-    $app->handleRequest(\Illuminate\Http\Request::capture());
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    $request = \Illuminate\Http\Request::capture();
+
+    // Bootstrap the application and auto-initialize SQLite if /tmp/database.sqlite is empty
+    $kernel->bootstrap();
+    if (!\Illuminate\Support\Facades\Schema::hasTable('users') || \App\Models\User::count() === 0) {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        \Illuminate\Support\Facades\Artisan::call('erp:seed-100');
+    }
+
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
 } catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');

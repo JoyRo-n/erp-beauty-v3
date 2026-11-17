@@ -243,27 +243,31 @@ class RoleAccessService
      */
     public static function purgeExpiredGrants(): void
     {
-        if (!Schema::hasTable('access_grants') || !Schema::hasColumn('access_grants', 'expires_at')) {
-            return;
-        }
-
-        $expired = AccessGrant::whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
-            ->get();
-
-        if ($expired->isEmpty()) {
-            return;
-        }
-
-        $hasRequests = Schema::hasTable('access_requests');
-        foreach ($expired as $grant) {
-            if ($hasRequests) {
-                \App\Models\AccessRequest::where('requester_role', $grant->grantee_role)
-                    ->where('app_key', $grant->app_key)
-                    ->where('status', 'Approved')
-                    ->update(['status' => 'Expired']);
+        try {
+            if (!Schema::hasTable('access_grants') || !Schema::hasColumn('access_grants', 'expires_at')) {
+                return;
             }
-            $grant->delete();
+
+            $expired = AccessGrant::whereNotNull('expires_at')
+                ->where('expires_at', '<=', now())
+                ->get();
+
+            if ($expired->isEmpty()) {
+                return;
+            }
+
+            $hasRequests = Schema::hasTable('access_requests');
+            foreach ($expired as $grant) {
+                if ($hasRequests) {
+                    \App\Models\AccessRequest::where('requester_role', $grant->grantee_role)
+                        ->where('app_key', $grant->app_key)
+                        ->where('status', 'Approved')
+                        ->update(['status' => 'Expired']);
+                }
+                $grant->delete();
+            }
+        } catch (\Throwable $e) {
+            return;
         }
     }
 
@@ -272,13 +276,17 @@ class RoleAccessService
      */
     public static function getGrantedAppKeys(string $role): array
     {
-        if (!Schema::hasTable('access_grants')) {
+        try {
+            if (!Schema::hasTable('access_grants')) {
+                return [];
+            }
+
+            self::purgeExpiredGrants();
+
+            return AccessGrant::where('grantee_role', $role)->pluck('app_key')->all();
+        } catch (\Throwable $e) {
             return [];
         }
-
-        self::purgeExpiredGrants();
-
-        return AccessGrant::where('grantee_role', $role)->pluck('app_key')->all();
     }
 
     /**
