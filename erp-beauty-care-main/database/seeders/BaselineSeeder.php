@@ -214,6 +214,20 @@ class BaselineSeeder extends Seeder
         JournalItem::create(['entry_number' => $entry->entry_number, 'account_code' => '2100', 'debit' => 0, 'credit' => 2220000, 'description' => 'Opening Accounts Payable']);
         JournalItem::create(['entry_number' => $entry->entry_number, 'account_code' => '3100', 'debit' => 0, 'credit' => 74832500, 'description' => 'Opening Capital']);
 
+        // Ensure employees table has HR personal & offboarding columns (for testing.sqlite & fresh environments)
+        if (\Illuminate\Support\Facades\Schema::hasTable('employees') && !\Illuminate\Support\Facades\Schema::hasColumn('employees', 'birthdate')) {
+            \Illuminate\Support\Facades\Schema::table('employees', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->string('birthdate')->nullable();
+                $table->string('phone')->nullable();
+                $table->text('address')->nullable();
+                $table->text('termination_reason')->nullable();
+                $table->string('termination_notice_type')->nullable();
+                $table->decimal('severance_amount', 15, 2)->default(0);
+                $table->timestamp('terminated_at')->nullable();
+                $table->text('offboarding_checklist')->nullable();
+            });
+        }
+
         // 9. Employees
         Employee::create(['id' => 'E001', 'name' => 'Sinta Maharani', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Facial'], 'status' => 'Aktif', 'birthdate' => '1997-04-12', 'phone' => '+62 812-8401-2201', 'address' => 'Jl. Dago Asri No. 14, Coblong, Kota Bandung']);
         Employee::create(['id' => 'E002', 'name' => 'Rizka Amalia', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Hair Treatment'], 'status' => 'Aktif', 'birthdate' => '1998-08-23', 'phone' => '+62 813-9210-3302', 'address' => 'Jl. Buah Batu No. 88, Lengkong, Kota Bandung']);

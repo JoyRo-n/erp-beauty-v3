@@ -1339,9 +1339,9 @@ class ErpController extends Controller
             'department' => $validated['department'],
             'skills' => $validated['skills'],
             'status' => 'Aktif',
-            'birthdate' => $validated['birthdate'] ?: '1997-06-15',
-            'phone' => $validated['phone'] ?: '+62 812-8899-1020',
-            'address' => $validated['address'] ?: 'Jl. Braga No. 25, Kota Bandung',
+            'birthdate' => $validated['birthdate'] ?? '1997-06-15',
+            'phone' => $validated['phone'] ?? '+62 812-8899-1020',
+            'address' => $validated['address'] ?? 'Jl. Braga No. 25, Kota Bandung',
         ]);
 
         AuditService::log('Create Employee', 'Employee', $empId, "Registered employee {$employee->name} ({$empId})", $user->name, $user->role);
