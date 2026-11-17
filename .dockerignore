@@ -1,9 +1,0 @@
-.git
-vendor
-erp-beauty-care-main/vendor
-erp-beauty-care-main/node_modules
-erp-beauty-care-main/database/database.sqlite
-erp-beauty-care-main/.env
-erp-beauty-care-main/storage/logs/*.log
-erp-beauty-care-main/storage/framework/views/*.php
-erp-beauty-care-main/storage/framework/sessions/*
