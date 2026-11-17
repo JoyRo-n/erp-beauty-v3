@@ -11,6 +11,7 @@ class AppNotification extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'message' => \App\Casts\EncryptedString::class,
         'created_at' => 'datetime',
         'read_at' => 'datetime',
     ];

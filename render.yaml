@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: erp-beauty-nusaglow
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: local
+      - key: APP_DEBUG
+        value: true
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file

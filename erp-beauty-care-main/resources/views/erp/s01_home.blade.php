@@ -4,6 +4,9 @@
 @section('breadcrumb', 'Apps > Beranda')
 
 @section('content')
+@php
+    $isEnHome = app()->getLocale() === 'en';
+@endphp
 <div class="space-y-6">
     <!-- Header Banner -->
     <div class="bg-gradient-to-r from-[#FFF5F8] via-[#FADADD]/60 to-white rounded-xl shadow-sm border border-[#F2B6CE] p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -13,7 +16,7 @@
             </div>
             <div>
                 <h1 class="text-2xl font-bold text-rose-950">PT Arunika Beauty Nusantara</h1>
-                <p class="text-xs text-rose-700/80 mt-1">NusaGlow ERP Web App &bull; Odoo 17.0 Desktop Architecture &bull; 7 Aplikasi Referensi &bull; 6 Peran Bisnis</p>
+                <p class="text-xs text-rose-700/80 mt-1">NusaGlow ERP Web App &bull; Odoo 17.0 Desktop Architecture &bull; {{ $isEnHome ? '7 Reference Apps &bull; 6 Business Roles' : '7 Aplikasi Referensi &bull; 6 Peran Bisnis' }}</p>
             </div>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-3">
@@ -22,7 +25,7 @@
                 <div class="text-lg font-bold text-rose-700">Rp{{ number_format($bankBalance, 0, ',', '.') }}</div>
             </div>
             <div class="bg-[#FADADD]/60 border border-[#F2B6CE] px-4 py-2 rounded-lg text-right">
-                <div class="text-xs text-rose-600 font-medium">Active Role</div>
+                <div class="text-xs text-rose-600 font-medium">{{ $isEnHome ? 'Active Role' : 'Peran Aktif' }}</div>
                 <div class="text-lg font-bold text-rose-950">{{ session('active_role', 'Sales') }}</div>
             </div>
         </div>
@@ -32,7 +35,7 @@
     <div>
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-bold uppercase text-rose-800/80 tracking-wider">
-                Aplikasi Divisi ({{ count($accessibleApps) }} Aplikasi &bull; {{ session('active_role', 'Sales') }})
+                {{ $isEnHome ? 'Division Applications' : 'Aplikasi Divisi' }} ({{ count($accessibleApps) }} {{ $isEnHome ? 'Apps' : 'Aplikasi' }} &bull; {{ session('active_role', 'Sales') }})
             </h2>
             @if(session('active_role') === 'Admin')
                 <span class="text-xs bg-gradient-to-r from-[#FFF0F5] to-[#FADADD] text-rose-900 font-semibold px-3 py-0.5 rounded-full border border-[#F2B6CE] shadow-xs">
@@ -44,7 +47,7 @@
                 </span>
             @else
                 <span class="text-xs bg-[#FFF0F5] text-rose-800 px-3 py-0.5 rounded-full border border-pink-200 font-medium">
-                    <i class="fa-solid fa-lock mr-1 text-rose-400"></i>Akses Terisolasi Divisi
+                    <i class="fa-solid fa-lock mr-1 text-rose-400"></i>{{ $isEnHome ? 'Isolated Division Access' : 'Akses Terisolasi Divisi' }}
                 </span>
             @endif
         </div>
@@ -79,12 +82,12 @@
                     <i class="fa-solid fa-bolt"></i>
                 </span>
                 <div>
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-rose-900">Shortcut Skenario ({{ count($accessibleShortcuts) }} Layar Terbuka)</h2>
-                    <p class="text-[11px] text-rose-600/80">Tautan cepat yang disesuaikan hanya untuk kebutuhan operasional staf divisi {{ session('active_role', 'Sales') }}</p>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-rose-900">{{ $isEnHome ? 'Scenario Shortcuts (' . count($accessibleShortcuts) . ' Unlocked Screens)' : 'Shortcut Skenario (' . count($accessibleShortcuts) . ' Layar Terbuka)' }}</h2>
+                    <p class="text-[11px] text-rose-600/80">{{ $isEnHome ? 'Quick links tailored exclusively for the ' . session('active_role', 'Sales') . ' division' : 'Tautan cepat yang disesuaikan hanya untuk kebutuhan operasional staf divisi ' . session('active_role', 'Sales') }}</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <span class="text-[11px] bg-[#FADADD]/80 text-rose-900 font-semibold px-2 py-0.5 rounded-full border border-[#F2B6CE]">{{ count($accessibleShortcuts) }} Layar</span>
+                <span class="text-[11px] bg-[#FADADD]/80 text-rose-900 font-semibold px-2 py-0.5 rounded-full border border-[#F2B6CE]">{{ count($accessibleShortcuts) }} {{ $isEnHome ? 'Screens' : 'Layar' }}</span>
                 <i id="accordion-icon" class="fa-solid fa-chevron-down text-rose-400 text-xs transition-transform duration-200"></i>
             </div>
         </button>

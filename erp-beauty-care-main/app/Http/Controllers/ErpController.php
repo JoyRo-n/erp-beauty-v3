@@ -126,6 +126,27 @@ class ErpController extends Controller
     }
 
     /**
+     * Switch Interface Language (Indonesia 'id' or English 'en')
+     */
+    public function switchLocale(Request $request)
+    {
+        $locale = in_array($request->input('locale'), ['id', 'en'], true)
+            ? $request->input('locale')
+            : 'id';
+
+        $request->session()->put('locale', $locale);
+        app()->setLocale($locale);
+
+        $msg = $locale === 'en'
+            ? 'Language switched to English (EN).'
+            : 'Bahasa berhasil diubah ke Bahasa Indonesia (ID).';
+
+        return redirect()->back()
+            ->withCookie(cookie('erp_locale', $locale, 60 * 24 * 365))
+            ->with('info', $msg);
+    }
+
+    /**
      * Switch Active Role:
      * - When Admin/Owner clicks "Inspeksi Akses" inside Main Admin Matrix (inspect=1):
      *   keeps their Admin/Owner session intact so they can inspect or press Back/Kembali without termination.
@@ -165,18 +186,25 @@ class ErpController extends Controller
                 ->with('info', "Mode Inspeksi {$currentUser->role}: Masukkan kata sandi untuk menginspeksi akun " . ($targetUser ? "{$targetUser->name} ({$role})" : $role) . ", atau tekan Kembali untuk tetap di akun {$currentUser->role}.");
         }
 
-        // Top-right sidebar account switch: terminate the previous account session completely
+        // Top-right sidebar account switch: only Master Admin may pre-select a target division role
+        $wasSuper = false;
         if (Auth::check()) {
             $prevUser = Auth::user();
-            AuditService::log('User Logout', 'Auth', (string) $prevUser->id, "User {$prevUser->name} logged out to switch to {$role}", $prevUser->name, $prevUser->role);
+            $wasSuper = RoleAccessService::isSuperRole($prevUser->role);
+            AuditService::log('User Logout', 'Auth', (string) $prevUser->id, "User {$prevUser->name} logged out", $prevUser->name, $prevUser->role);
             Auth::logout();
         }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login', ['role' => $role])
-            ->with('info', "Sesi sebelumnya telah diakhiri. Masukkan kata sandi untuk masuk sebagai " . ($targetUser ? "{$targetUser->name} ({$role})" : $role) . ".");
+        if ($wasSuper) {
+            return redirect()->route('login', ['role' => $role])
+                ->with('info', "Sesi sebelumnya telah diakhiri. Masukkan kata sandi untuk masuk sebagai " . ($targetUser ? "{$targetUser->name} ({$role})" : $role) . ".");
+        }
+
+        return redirect()->route('login')
+            ->with('info', 'Sesi sebelumnya telah diakhiri. Silakan masuk menggunakan email dan kata sandi akun Anda.');
     }
 
     /**
@@ -1102,14 +1130,27 @@ class ErpController extends Controller
         $user = $this->getActiveUser($request);
         $this->authorizeRole($user, ['Finance', 'Owner'], 'General Ledger', 'GL-MENU');
 
-        $entries = JournalEntry::with('items.account')->latest('date')->get();
+        // Strictly chronological accounting order (Opening Balance first, then each cycle in sequence)
+        $entries = JournalEntry::with('items.account')
+            ->orderBy('date', 'asc')
+            ->orderBy('rowid', 'asc')
+            ->get();
+
+        // All Posted Journal Item Lines (so each row is either Debit OR Credit, never both on the same line)
+        $ledgerLines = JournalItem::with(['account', 'entry'])
+            ->join('journal_entries', 'journal_items.entry_number', '=', 'journal_entries.entry_number')
+            ->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_items.id', 'asc')
+            ->select('journal_items.*')
+            ->get();
+
         $selectedNumber = $request->input('entry', 'JE/2026/OPENING');
-        $selectedEntry = JournalEntry::find($selectedNumber) ?: $entries->first();
+        $selectedEntry = JournalEntry::with('items.account')->find($selectedNumber) ?: $entries->first();
 
         $logNotes = LogNote::where('document_type', 'Journal Entry')->get();
         $auditLogs = AuditLog::where('document_type', 'Journal Entry')->get();
 
-        return view('erp.s13_ledger', compact('user', 'entries', 'selectedEntry', 'logNotes', 'auditLogs'));
+        return view('erp.s13_ledger', compact('user', 'entries', 'ledgerLines', 'selectedEntry', 'logNotes', 'auditLogs'));
     }
 
     /**
@@ -1284,6 +1325,9 @@ class ErpController extends Controller
             'job_position' => 'required|string|max:50',
             'department' => 'required|string|max:50',
             'skills' => 'required|array',
+            'birthdate' => 'nullable|string|max:30',
+            'phone' => 'nullable|string|max:40',
+            'address' => 'nullable|string|max:255',
         ]);
 
         $empId = self::generateSequence(Employee::class, 'id', 'E', 3);
@@ -1295,11 +1339,84 @@ class ErpController extends Controller
             'department' => $validated['department'],
             'skills' => $validated['skills'],
             'status' => 'Aktif',
+            'birthdate' => $validated['birthdate'] ?: '1997-06-15',
+            'phone' => $validated['phone'] ?: '+62 812-8899-1020',
+            'address' => $validated['address'] ?: 'Jl. Braga No. 25, Kota Bandung',
         ]);
 
         AuditService::log('Create Employee', 'Employee', $empId, "Registered employee {$employee->name} ({$empId})", $user->name, $user->role);
 
         return redirect()->route('s16.employee', ['emp' => $empId])->with('success', "Karyawan baru {$employee->name} ({$empId}) berhasil didaftarkan!");
+    }
+
+    /**
+     * S-16B: HR Employee Offboarding & Termination Procedure
+     */
+    public function employeeOffboarding(Request $request)
+    {
+        $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Studio'], 'Employees & Skill Matrix');
+
+        $employees = Employee::all();
+        $activeEmployees = $employees->where('status', 'Aktif')->values();
+        $terminatedEmployees = $employees->where('status', '!=', 'Aktif')->values();
+
+        $selectedId = $request->input('emp');
+        $selectedEmployee = Employee::find($selectedId) ?: ($activeEmployees->first() ?: $employees->first());
+
+        $logNotes = $selectedEmployee ? LogNote::where('document_id', $selectedEmployee->id)->get() : collect();
+        $auditLogs = $selectedEmployee ? AuditLog::where('document_id', $selectedEmployee->id)->get() : collect();
+
+        return view('erp.s16_offboarding', compact('user', 'employees', 'activeEmployees', 'terminatedEmployees', 'selectedEmployee', 'logNotes', 'auditLogs'));
+    }
+
+    public function processEmployeeTermination(Request $request)
+    {
+        $user = $this->getActiveUser($request);
+        $this->authorizeRole($user, ['Studio'], 'Employees & Skill Matrix');
+
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'termination_notice_type' => 'required|string|max:100',
+            'termination_reason' => 'required|string|max:500',
+            'severance_amount' => 'required|numeric|min:0',
+            'checklist' => 'required|array|min:4',
+        ], [
+            'checklist.min' => 'All 4 corporate HR offboarding clearance steps (Exit Interview, Asset Handover, System Access Revocation, and Final Settlement) must be checked before firing an employee.',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+        if ($employee->status !== 'Aktif') {
+            return redirect()->back()->with('warning', "Employee {$employee->name} ({$employee->id}) has already been offboarded / Nonaktif.");
+        }
+
+        $employee->update([
+            'status' => 'Nonaktif',
+            'termination_notice_type' => $validated['termination_notice_type'],
+            'termination_reason' => $validated['termination_reason'],
+            'severance_amount' => (float) $validated['severance_amount'],
+            'terminated_at' => now(),
+            'offboarding_checklist' => $validated['checklist'],
+        ]);
+
+        LogNote::create([
+            'author' => $user->name . ' (' . $user->role . ')',
+            'document_type' => 'Employee',
+            'document_id' => $employee->id,
+            'message' => "Official HR Offboarding completed for {$employee->name}. Notice: {$validated['termination_notice_type']}. Reason: {$validated['termination_reason']}. Final Severance/Settlement: Rp" . number_format((float) $validated['severance_amount'], 0, ',', '.'),
+        ]);
+
+        AuditService::log(
+            'Terminate Employee',
+            'Employee',
+            $employee->id,
+            "Offboarded {$employee->name} ({$employee->id}) via {$validated['termination_notice_type']} — Status set to Nonaktif",
+            $user->name,
+            $user->role
+        );
+
+        return redirect()->route('s16.offboarding', ['emp' => $employee->id])
+            ->with('success', "Official HR Offboarding & Termination completed for {$employee->name} ({$employee->id}). Status updated to Nonaktif and scheduling privileges revoked.");
     }
 
     /**

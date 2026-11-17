@@ -10,6 +10,7 @@ class CustomerInvoiceLine extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'description' => \App\Casts\EncryptedString::class,
         'unit_price' => 'decimal:2',
         'discount_percent' => 'decimal:2',
         'tax_amount' => 'decimal:2',

@@ -14,6 +14,8 @@ class SalesOrder extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'payment_terms' => \App\Casts\EncryptedString::class,
+        'created_by' => \App\Casts\EncryptedString::class,
         'untaxed_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',

@@ -1,3 +1,8 @@
+@php
+    $chatterCurrentRole = session('active_role', auth()->user()->role ?? 'Sales');
+    // Audit / History is visible ONLY to Master Admin ('Admin') or when Master Admin is inspecting a staff division
+    $canViewAuditTrail = ($chatterCurrentRole === 'Admin') || !empty(session('origin_super_user_id'));
+@endphp
 <div class="mt-8 bg-white border border-[#F2C6D8] rounded-xl shadow-sm overflow-hidden" x-data="{ tab: 'related' }">
     <div class="border-b border-[#F2C6D8] bg-gradient-to-r from-[#FFF0F5] via-[#FADADD]/65 to-[#FFF7FA] flex items-center justify-between px-5">
         <div class="flex space-x-6 text-xs font-semibold">
@@ -7,12 +12,14 @@
             <button onclick="switchChatterTab('notes')" id="tab-btn-notes" class="py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none">
                 <i class="fa-regular fa-message mr-1"></i> Log Notes ({{ count($logNotes ?? []) }})
             </button>
-            <button onclick="switchChatterTab('audit')" id="tab-btn-audit" class="py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none">
-                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Audit / History ({{ count($auditLogs ?? []) }})
-            </button>
+            @if($canViewAuditTrail)
+                <button onclick="switchChatterTab('audit')" id="tab-btn-audit" class="py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Audit / History ({{ count($auditLogs ?? []) }})
+                </button>
+            @endif
         </div>
         <div class="text-xs text-rose-500 font-medium hidden sm:block">
-            <i class="fa-solid fa-sparkles mr-1 text-rose-400"></i><span>Traceability & Audit Trail</span>
+            <i class="fa-solid fa-sparkles mr-1 text-rose-400"></i><span>{{ $canViewAuditTrail ? 'Traceability & Audit Trail (Master Admin)' : 'Document Traceability & Notes' }}</span>
         </div>
     </div>
 
@@ -127,6 +134,7 @@
         @endif
     </div>
 
+    @if($canViewAuditTrail)
     <!-- Audit / History Tab Pane -->
     <div id="pane-audit" class="p-4 text-xs hidden bg-gradient-to-b from-white to-[#FFF9FB]">
         @if(isset($auditLogs) && count($auditLogs) > 0)
@@ -164,19 +172,28 @@
             <div class="text-rose-400/80 italic py-2 text-center">No audit trail records found.</div>
         @endif
     </div>
+    @endif
 </div>
 
 <script>
     function switchChatterTab(tab) {
-        document.getElementById('pane-related').classList.add('hidden');
-        document.getElementById('pane-notes').classList.add('hidden');
-        document.getElementById('pane-audit').classList.add('hidden');
+        const relPane = document.getElementById('pane-related');
+        const notesPane = document.getElementById('pane-notes');
+        const auditPane = document.getElementById('pane-audit');
+        if (relPane) relPane.classList.add('hidden');
+        if (notesPane) notesPane.classList.add('hidden');
+        if (auditPane) auditPane.classList.add('hidden');
 
-        document.getElementById('tab-btn-related').className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
-        document.getElementById('tab-btn-notes').className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
-        document.getElementById('tab-btn-audit').className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
+        const relBtn = document.getElementById('tab-btn-related');
+        const notesBtn = document.getElementById('tab-btn-notes');
+        const auditBtn = document.getElementById('tab-btn-audit');
+        if (relBtn) relBtn.className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
+        if (notesBtn) notesBtn.className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
+        if (auditBtn) auditBtn.className = "py-3 border-b-2 border-transparent text-rose-700/70 hover:text-rose-900 focus:outline-none";
 
-        document.getElementById('pane-' + tab).classList.remove('hidden');
-        document.getElementById('tab-btn-' + tab).className = "py-3 border-b-2 border-[#D95386] text-rose-900 font-bold focus:outline-none";
+        const activePane = document.getElementById('pane-' + tab);
+        const activeBtn = document.getElementById('tab-btn-' + tab);
+        if (activePane) activePane.classList.remove('hidden');
+        if (activeBtn) activeBtn.className = "py-3 border-b-2 border-[#D95386] text-rose-900 font-bold focus:outline-none";
     }
 </script>

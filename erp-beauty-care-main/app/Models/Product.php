@@ -14,6 +14,10 @@ class Product extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'name' => \App\Casts\EncryptedString::class,
+        'size' => \App\Casts\EncryptedString::class,
+        'color' => \App\Casts\EncryptedString::class,
+        'unit' => \App\Casts\EncryptedString::class,
         'sales_price' => 'decimal:2',
         'cost' => 'decimal:2',
     ];

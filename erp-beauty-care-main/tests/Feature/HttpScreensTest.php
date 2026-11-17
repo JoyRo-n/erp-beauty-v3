@@ -199,7 +199,12 @@ class HttpScreensTest extends TestCase
         ]);
         $response->assertRedirect();
         $response->assertSessionHas('success');
-        $this->assertDatabaseHas('contacts', ['name' => 'Bunga Melati']);
+
+        $rawRow = \Illuminate\Support\Facades\DB::table('contacts')->where('id', 'C007')->first();
+        $this->assertNotNull($rawRow);
+        $this->assertStringStartsWith('eyJpdiI6', $rawRow->name, 'Customer name in SQLite must be AES-256 encrypted');
+        $this->assertStringStartsWith('eyJpdiI6', $rawRow->city, 'Customer city in SQLite must be AES-256 encrypted');
+        $this->assertEquals('Bunga Melati', \App\Models\Contact::find('C007')->name);
     }
 
     public function test_s03_create_product_action(): void
@@ -217,6 +222,10 @@ class HttpScreensTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('products', ['variant_sku' => 'BC-NEW-999']);
+
+        $rawProduct = \Illuminate\Support\Facades\DB::table('products')->where('variant_sku', 'BC-NEW-999')->first();
+        $this->assertStringStartsWith('eyJpdiI6', $rawProduct->name, 'Product name in SQLite must be AES-256 encrypted');
+        $this->assertEquals('New Glow Cream', \App\Models\Product::find('BC-NEW-999')->name);
     }
 
     public function test_s04_create_lead_action(): void
@@ -227,7 +236,11 @@ class HttpScreensTest extends TestCase
         ]);
         $response->assertRedirect('/crm');
         $response->assertSessionHas('success');
-        $this->assertDatabaseHas('crm_leads', ['name' => 'Corporate Package Demo']);
+
+        $rawLead = \Illuminate\Support\Facades\DB::table('crm_leads')->where('id', 'LEAD-0002')->first();
+        $this->assertNotNull($rawLead);
+        $this->assertStringStartsWith('eyJpdiI6', $rawLead->name, 'CRM lead name in SQLite must be AES-256 encrypted');
+        $this->assertEquals('Corporate Package Demo', \App\Models\CrmLead::find('LEAD-0002')->name);
     }
 
     public function test_s16_create_employee_action(): void
@@ -240,7 +253,12 @@ class HttpScreensTest extends TestCase
         ]);
         $response->assertRedirect();
         $response->assertSessionHas('success');
-        $this->assertDatabaseHas('employees', ['name' => 'Maya Indah']);
+
+        $rawEmp = \Illuminate\Support\Facades\DB::table('employees')->where('id', 'E005')->first();
+        $this->assertNotNull($rawEmp);
+        $this->assertStringStartsWith('eyJpdiI6', $rawEmp->name, 'Employee name in SQLite must be AES-256 encrypted');
+        $this->assertStringStartsWith('eyJpdiI6', $rawEmp->skills, 'Employee skills in SQLite must be AES-256 encrypted');
+        $this->assertEquals('Maya Indah', \App\Models\Employee::find('E005')->name);
     }
 
     public function test_s17_create_treatment_action(): void

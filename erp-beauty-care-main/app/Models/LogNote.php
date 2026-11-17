@@ -11,6 +11,8 @@ class LogNote extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'message' => \App\Casts\EncryptedString::class,
+        'user_name' => \App\Casts\EncryptedString::class,
         'created_at' => 'datetime',
     ];
 }

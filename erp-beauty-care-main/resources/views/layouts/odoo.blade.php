@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -111,6 +111,8 @@
     <!-- Top Odoo 17 Web Navigation Bar -->
     @php
         $currRole = session('active_role', 'Sales');
+        $currLocale = app()->getLocale();
+        $isEn = $currLocale === 'en';
         $accessibleApps = \App\Services\RoleAccessService::getAccessibleApps($currRole);
         $activeProfile = \App\Services\RoleAccessService::getProfile($currRole);
         $roleProfiles = \App\Services\RoleAccessService::getProfiles();
@@ -142,8 +144,8 @@
                 </button>
                 <div id="app-switcher-menu" class="absolute left-0 top-full mt-1.5 w-72 bg-white text-gray-800 rounded-xl shadow-2xl py-2 hidden z-50 border border-pink-200 ring-1 ring-black/5">
                     <div class="px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-400 border-b border-pink-100 pb-2 mb-1 flex justify-between items-center">
-                        <span>Aplikasi Divisi &bull; {{ $currRole }}</span>
-                        <a href="{{ route('s01.home') }}" class="text-rose-600 hover:underline normal-case font-semibold"><i class="fa-solid fa-house mr-1"></i>Home</a>
+                        <span>{{ $isEn ? 'Division Apps' : 'Aplikasi Divisi' }} &bull; {{ $currRole }}</span>
+                        <a href="{{ route('s01.home') }}" class="text-rose-600 hover:underline normal-case font-semibold"><i class="fa-solid fa-house mr-1"></i>{{ $isEn ? 'Home' : 'Beranda' }}</a>
                     </div>
                     @foreach($accessibleApps as $app)
                         <a href="{{ route($app['route']) }}" class="flex items-center px-4 py-2 hover:bg-pink-50/70 text-sm font-medium transition">
@@ -160,13 +162,13 @@
                         <div class="border-t border-pink-100 my-1"></div>
                         <div class="px-4 py-1.5 text-[11px] text-rose-800 bg-pink-50/80 flex items-center justify-between font-semibold">
                             <span><i class="fa-solid fa-shield-halved mr-1 text-rose-500"></i>Main Admin Full Access</span>
-                            <span class="text-[9px] bg-pink-200/70 text-rose-900 px-1.5 py-0.5 rounded font-bold">Semua Modul</span>
+                            <span class="text-[9px] bg-pink-200/70 text-rose-900 px-1.5 py-0.5 rounded font-bold">{{ $isEn ? 'All Modules' : 'Semua Modul' }}</span>
                         </div>
                     @elseif($currRole === 'Owner')
                         <div class="border-t border-pink-100 my-1"></div>
                         <div class="px-4 py-1.5 text-[11px] text-fuchsia-900 bg-fuchsia-50/80 flex items-center justify-between font-semibold">
                             <span><i class="fa-solid fa-chart-pie mr-1 text-fuchsia-600"></i>Financial &amp; Profit Access</span>
-                            <span class="text-[9px] bg-fuchsia-200/70 text-fuchsia-950 px-1.5 py-0.5 rounded font-bold">Keuangan &amp; Laba</span>
+                            <span class="text-[9px] bg-fuchsia-200/70 text-fuchsia-950 px-1.5 py-0.5 rounded font-bold">{{ $isEn ? 'Finance & Profit' : 'Keuangan & Laba' }}</span>
                         </div>
                     @endif
                 </div>
@@ -179,13 +181,13 @@
             </div>
         </div>
 
-        <div class="flex items-center space-x-3 text-xs">
+        <div class="flex items-center space-x-2.5 text-xs">
             @if($originSuperUser)
                 <form action="{{ route('return.super') }}" method="POST" id="return-super-header-form">
                     @csrf
                     <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
                         <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                        <span>Kembali ke {{ $originSuperUser->role }}</span>
+                        <span>{{ $isEn ? 'Return to ' : 'Kembali ke ' }}{{ $originSuperUser->role }}</span>
                     </button>
                 </form>
             @endif
@@ -196,18 +198,40 @@
                 <span class="font-semibold text-rose-900">PT Arunika Beauty Nusantara</span>
             </div>
 
-            <!-- Quick Side Drawer Button (Request Access / Master Admin Approvals) -->
-            <button type="button" onclick="openAccessSideDrawer()" class="relative bg-white/75 hover:bg-white border border-pink-200/90 text-rose-900 px-3 py-1.5 rounded-lg shadow-sm transition flex items-center space-x-1.5 focus:outline-none" title="Cross-Division Access Panel">
-                <i class="fa-solid {{ $currRole === 'Admin' ? 'fa-user-check text-emerald-600' : 'fa-key text-rose-500' }} text-xs"></i>
-                <span class="hidden lg:inline font-semibold">{{ $currRole === 'Admin' ? 'Approvals' : (\App\Services\RoleAccessService::isSuperRole($currRole) ? 'Access Queue' : 'Request Access') }}</span>
+            <!-- Language Switcher (ID / EN) -->
+            <form action="{{ route('locale.switch') }}" method="POST" class="inline-flex items-center bg-white/75 border border-pink-200/90 rounded-lg p-0.5 shadow-sm">
+                @csrf
+                <button
+                    type="submit"
+                    name="locale"
+                    value="id"
+                    class="px-2 py-1 rounded-md text-[11px] font-bold transition {{ !$isEn ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white shadow-xs' : 'text-rose-700 hover:bg-pink-50' }}"
+                    title="Bahasa Indonesia"
+                >
+                    ID
+                </button>
+                <button
+                    type="submit"
+                    name="locale"
+                    value="en"
+                    class="px-2 py-1 rounded-md text-[11px] font-bold transition {{ $isEn ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white shadow-xs' : 'text-rose-700 hover:bg-pink-50' }}"
+                    title="English"
+                >
+                    EN
+                </button>
+            </form>
+
+            <!-- Quick Pop-Up Modal Button (Key Icon Only) -->
+            <button type="button" onclick="openAccessSideDrawer()" class="relative bg-white/75 hover:bg-white border border-pink-200/90 text-rose-900 px-2.5 py-1.5 rounded-lg shadow-sm transition flex items-center justify-center focus:outline-none" title="{{ $currRole === 'Admin' ? ($isEn ? 'Master Admin Approvals' : 'Persetujuan Master Admin') : ($isEn ? 'Request Cross-Division Access' : 'Ajukan Akses Lintas Divisi') }}">
+                <i class="fa-solid fa-key text-sm text-rose-600"></i>
                 @if($pendingAccessReqCount > 0)
-                    <span class="min-w-[18px] h-4 px-1 rounded-full {{ $currRole === 'Admin' ? 'bg-rose-500 text-white' : 'bg-amber-400 text-slate-900' }} text-[10px] font-extrabold flex items-center justify-center shadow-sm">{{ $pendingAccessReqCount }}</span>
+                    <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-4 px-1 rounded-full {{ $currRole === 'Admin' ? 'bg-rose-500 text-white' : 'bg-amber-400 text-slate-900' }} ring-2 ring-white text-[10px] font-extrabold flex items-center justify-center shadow">{{ $pendingAccessReqCount }}</span>
                 @endif
             </button>
 
             <!-- Notification Bell (team inbox) -->
             <div class="relative" id="notif-container">
-                <button type="button" onclick="toggleNotif(event)" class="relative bg-white/75 hover:bg-white border border-pink-200/90 px-2.5 py-1.5 rounded-lg shadow-sm transition focus:outline-none" title="Notifikasi">
+                <button type="button" onclick="toggleNotif(event)" class="relative bg-white/75 hover:bg-white border border-pink-200/90 px-2.5 py-1.5 rounded-lg shadow-sm transition focus:outline-none" title="{{ $isEn ? 'Notifications' : 'Notifikasi' }}">
                     <i class="fa-solid fa-bell text-sm text-rose-700"></i>
                     @if($notifUnread > 0)
                         <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-4 px-1 rounded-full bg-rose-500 text-white ring-2 ring-white text-[10px] font-extrabold flex items-center justify-center shadow">{{ $notifUnread }}</span>
@@ -215,11 +239,11 @@
                 </button>
                 <div id="notif-menu" class="absolute right-0 top-full mt-1.5 w-96 bg-white text-gray-800 rounded-xl shadow-2xl hidden z-50 border border-pink-200 ring-1 ring-black/5">
                     <div class="px-4 py-2.5 border-b border-pink-100 bg-pink-50/60 rounded-t-xl flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Notifikasi Tim {{ $currRole }}</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-rose-700">{{ $isEn ? 'Team Notifications' : 'Notifikasi Tim' }} {{ $currRole }}</span>
                         @if($notifUnread > 0)
                             <form action="{{ route('notifications.read') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="text-[11px] text-rose-600 hover:underline font-semibold">Tandai semua dibaca</button>
+                                <button type="submit" class="text-[11px] text-rose-600 hover:underline font-semibold">{{ $isEn ? 'Mark all read' : 'Tandai semua dibaca' }}</button>
                             </form>
                         @endif
                     </div>
@@ -234,7 +258,7 @@
                                 <div class="text-[10px] text-gray-400 mt-1">{{ $n->created_at }}</div>
                             </a>
                         @empty
-                            <div class="px-4 py-6 text-center text-xs text-gray-400 italic">Belum ada notifikasi.</div>
+                            <div class="px-4 py-6 text-center text-xs text-gray-400 italic">{{ $isEn ? 'No notifications yet.' : 'Belum ada notifikasi.' }}</div>
                         @endforelse
                     </div>
                 </div>
@@ -254,77 +278,85 @@
                 </button>
 
                 <!-- User Dropdown Menu -->
-                <div id="user-profile-menu" class="absolute right-0 top-full mt-1.5 w-80 bg-white text-gray-800 rounded-xl shadow-2xl py-2 hidden z-50 border border-rose-200 ring-1 ring-rose-900/5">
+                <div id="user-profile-menu" class="absolute right-0 top-full mt-2 w-96 sm:w-[26rem] bg-white text-gray-800 rounded-2xl shadow-2xl py-3 hidden z-50 border border-[#F2B6CE] ring-1 ring-rose-900/5">
                     <!-- Current User Header -->
-                    <div class="px-4 py-3 bg-gradient-to-r from-rose-50 to-pink-50 border-b border-rose-100 flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full {{ $activeProfile['avatar_color'] }} text-white font-bold flex items-center justify-center text-sm shadow">
+                    <div class="px-5 py-4 bg-gradient-to-r from-[#FFF5F8] via-[#FADADD]/60 to-white border-b border-rose-100 flex items-start space-x-3.5">
+                        <div class="w-12 h-12 rounded-full {{ $activeProfile['avatar_color'] }} text-white font-bold flex items-center justify-center text-base shadow flex-shrink-0 mt-0.5">
                             {{ substr($activeProfile['name'], 0, 1) }}
                         </div>
-                        <div class="overflow-hidden">
-                            <div class="font-bold text-sm text-gray-900 leading-tight truncate">{{ $activeProfile['name'] }}</div>
-                            <div class="text-xs text-rose-700 font-medium">{{ $activeProfile['email'] }}</div>
-                            <div class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded mt-0.5 inline-block font-semibold">
-                                Izin: {{ $activeProfile['access'] }}
+                        <div class="overflow-hidden flex-1">
+                            <div class="font-bold text-base text-rose-950 leading-tight truncate">{{ $activeProfile['name'] }}</div>
+                            <div class="text-xs text-rose-600 font-medium mt-0.5">{{ $activeProfile['email'] }}</div>
+                            <div class="text-xs text-rose-800/85 mt-1.5 leading-relaxed font-medium">
+                                {{ $isEn ? 'Permissions:' : 'Izin:' }} {{ $activeProfile['access'] }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Role Switcher Section (Multi-role testing) -->
-                    <div class="px-4 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-rose-400 flex justify-between">
-                        <span>Pilih Akun / Peran</span>
-                    </div>
-
-                    <form action="{{ route('switch.role') }}" method="POST" id="switch-role-form">
-                        @csrf
-                        <input type="hidden" name="role" id="switch-role-input" value="{{ $currRole }}">
-                        <div class="px-2 space-y-1 max-h-72 overflow-y-auto">
-                            @foreach($roleProfiles as $rKey => $pInfo)
-                                <button type="button" onclick="selectRole('{{ $rKey }}')" class="w-full text-left px-2.5 py-1.5 rounded-md text-xs flex items-center justify-between transition {{ $currRole === $rKey ? 'bg-rose-50 text-rose-900 font-semibold border border-rose-200' : 'text-gray-700 hover:bg-rose-50/50' }}">
-                                    <div class="flex items-center space-x-2.5 overflow-hidden">
-                                        <span class="w-6 h-6 rounded-full {{ $pInfo['avatar_color'] }} text-white flex-shrink-0 flex items-center justify-center text-[10px] font-bold">
-                                            {{ substr($pInfo['name'], 0, 1) }}
-                                        </span>
-                                        <div class="truncate">
-                                            <div class="text-xs font-semibold leading-tight text-gray-800">{{ $pInfo['name'] }}</div>
-                                            <div class="text-[10px] text-gray-500 leading-none">{{ $pInfo['email'] }} &bull; <strong class="text-rose-600">{{ $rKey }}</strong></div>
-                                        </div>
-                                    </div>
-                                    @if($currRole === $rKey)
-                                        <i class="fa-solid fa-check text-rose-600 text-xs ml-1 flex-shrink-0"></i>
-                                    @endif
-                                </button>
-                            @endforeach
+                    @if($currRole === 'Admin')
+                        <!-- Role Switcher Section (Visible exclusively to Master Admin) -->
+                        <div class="px-5 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-400 flex justify-between">
+                            <span>{{ $isEn ? 'Select Account / Role (Master Admin)' : 'Pilih Akun / Peran (Master Admin)' }}</span>
                         </div>
-                    </form>
 
-                    <div class="border-t border-rose-100 my-2"></div>
+                        <form action="{{ route('switch.role') }}" method="POST" id="switch-role-form">
+                            @csrf
+                            <input type="hidden" name="role" id="switch-role-input" value="{{ $currRole }}">
+                            <div class="px-3 space-y-1 max-h-80 overflow-y-auto">
+                                @foreach($roleProfiles as $rKey => $pInfo)
+                                    <button type="button" onclick="selectRole('{{ $rKey }}')" class="w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition {{ $currRole === $rKey ? 'bg-rose-50 text-rose-900 font-semibold border border-rose-200' : 'text-gray-700 hover:bg-rose-50/50' }}">
+                                        <div class="flex items-center space-x-3 overflow-hidden">
+                                            <span class="w-7 h-7 rounded-full {{ $pInfo['avatar_color'] }} text-white flex-shrink-0 flex items-center justify-center text-xs font-bold">
+                                                {{ substr($pInfo['name'], 0, 1) }}
+                                            </span>
+                                            <div class="truncate">
+                                                <div class="text-xs font-semibold leading-tight text-gray-800">{{ $pInfo['name'] }}</div>
+                                                <div class="text-[11px] text-gray-500 leading-none mt-0.5">{{ $pInfo['email'] }} &bull; <strong class="text-rose-600">{{ $rKey }}</strong></div>
+                                            </div>
+                                        </div>
+                                        @if($currRole === $rKey)
+                                            <i class="fa-solid fa-check text-rose-600 text-xs ml-1 flex-shrink-0"></i>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        </form>
+
+                        <div class="border-t border-rose-100 my-2.5"></div>
+                    @else
+                        <div class="px-5 py-3 text-xs text-rose-800 bg-[#FFF5F8]/80 border-b border-rose-100 flex items-center space-x-2.5">
+                            <i class="fa-solid fa-shield-halved text-rose-500 text-sm"></i>
+                            <span>{!! $isEn ? 'Isolated session for role <strong>' . e($currRole) . '</strong>' : 'Sesi terisolasi untuk peran <strong>' . e($currRole) . '</strong>' !!}</span>
+                        </div>
+                        <div class="my-2"></div>
+                    @endif
 
                     <!-- Logout Button (Key Re-entry Enforcement) -->
-                    <div class="px-2 pb-1 space-y-1">
+                    <div class="px-3 pb-1.5 space-y-1.5">
                         @if($originSuperUser)
                             <form action="{{ route('return.super') }}" method="POST" id="return-super-menu-form">
                                 @csrf
-                                <button type="submit" class="w-full text-left px-3 py-1.5 rounded-md text-xs text-rose-800 bg-rose-50 hover:bg-rose-100 flex items-center space-x-2 transition font-bold border border-rose-200">
+                                <button type="submit" class="w-full text-left px-4 py-2.5 rounded-xl text-xs text-rose-800 bg-rose-50 hover:bg-rose-100 flex items-center space-x-2.5 transition font-bold border border-rose-200">
                                     <i class="fa-solid fa-arrow-left text-xs"></i>
-                                    <span>Kembali ke Sesi {{ $originSuperUser->role }} ({{ $originSuperUser->name }})</span>
+                                    <span>{{ $isEn ? 'Return to ' . $originSuperUser->role . ' Session' : 'Kembali ke Sesi ' . $originSuperUser->role }} ({{ $originSuperUser->name }})</span>
                                 </button>
                             </form>
                         @endif
                         <form action="{{ route('logout') }}" method="POST" id="logout-form" onsubmit="return requestLogoutConfirm(event, this, null)">
                             @csrf
-                            <button type="submit" class="w-full text-left px-3 py-1.5 rounded-md text-xs text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition font-medium border border-rose-200">
+                            <button type="submit" class="w-full text-left px-4 py-2.5 rounded-xl text-xs text-rose-600 hover:bg-rose-50 flex items-center space-x-2.5 transition font-semibold border border-rose-200">
                                 <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                                <span>Keluar / Log Out (Kunci Sesi)</span>
+                                <span>{{ $isEn ? 'Log Out (Lock Session)' : 'Keluar / Log Out (Kunci Sesi)' }}</span>
                             </button>
                         </form>
                     </div>
 
                     <!-- Reset Seed Shortcut (Restricted to Admin, Owner, or Finance) -->
                     @if(in_array($currRole, ['Admin', 'Owner', 'Finance']))
-                        <div class="px-2 pb-1">
+                        <div class="px-3 pt-0.5 pb-1">
                             <form action="{{ route('reset.baseline') }}" method="POST" onsubmit="return confirm('Restore pristine seed baseline?');">
                                 @csrf
-                                <button type="submit" class="w-full text-left px-3 py-1.5 rounded-md text-xs text-gray-500 hover:bg-gray-100 flex items-center space-x-2 transition">
+                                <button type="submit" class="w-full text-left px-4 py-2 rounded-xl text-xs text-rose-700/80 hover:bg-[#FFF0F5] flex items-center space-x-2.5 transition">
                                     <i class="fa-solid fa-rotate-left text-xs"></i>
                                     <span>Reset Database to Baseline</span>
                                 </button>
@@ -423,6 +455,7 @@
             }
         }
 
+        @if($currRole === 'Admin')
         function selectRole(role) {
             if (role === CURRENT_ACTIVE_ROLE) {
                 const userMenu = document.getElementById('user-profile-menu');
@@ -442,6 +475,7 @@
                 }
             );
         }
+        @endif
 
         function requestLogoutConfirm(e, formEl, targetRole) {
             if (formEl.dataset.confirmed === '1') {
@@ -490,7 +524,7 @@
     </script>
 
     <!-- Flash Alerts -->
-    <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14 pr-10 sm:pr-12 lg:pr-14 xl:pr-16 mt-3">
+    <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14 mt-3">
         @if(session('success'))
             <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-3 rounded shadow-sm text-sm flex items-center justify-between mb-3">
                 <div class="flex items-center space-x-2">
@@ -530,7 +564,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14 pr-10 sm:pr-12 lg:pr-14 xl:pr-16 py-5">
+    <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14 py-5">
         @yield('content')
     </main>
 
@@ -541,11 +575,113 @@
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/85 text-rose-800 border border-pink-200 shadow-xs">
                 <i class="fa-solid fa-spa mr-1 text-rose-400 text-[10px]"></i>Odoo 17.0 UI Pattern
             </span>
-            <span>Active: <strong class="text-rose-950">{{ session('active_role', 'Sales') }}</strong></span>
+            <span>{{ $isEn ? 'Active:' : 'Aktif:' }} <strong class="text-rose-950">{{ session('active_role', 'Sales') }}</strong></span>
         </div>
     </footer>
 
     @include('partials.access_side_drawer')
+
+    <script>
+        (function () {
+            const CURRENT_LOCALE = @json($currLocale);
+
+            // EN -> ID dictionary when Indonesian ('id') is selected
+            const EN_TO_ID = {
+                'Customers': 'Pelanggan',
+                'Customer Profile': 'Profil Pelanggan',
+                'Calculated Credit Exposure': 'Eksposur Kredit Terhitung',
+                'Customer ID': 'ID Pelanggan',
+                'Opening Unpaid AR': 'Saldo Awal Piutang (AR)',
+                'Payment Terms': 'Termin Pembayaran',
+                'Customer List & Balances': 'Daftar & Saldo Pelanggan',
+                'Contact ID': 'ID Kontak',
+                'Name': 'Nama',
+                'Type': 'Tipe',
+                'City': 'Kota',
+                'Opening AR': 'Piutang Awal',
+                'Create New Customer': 'Buat Pelanggan Baru',
+                'Save Customer': 'Simpan Pelanggan',
+                'Products & Variants': 'Produk & Varian',
+                'Create New Product Variant': 'Buat Varian Produk Baru',
+                'Stock Overview': 'Ringkasan Stok',
+                'Returns': 'Retur Penjualan',
+                'Document Status:': 'Status Dokumen:',
+                'Order Number': 'Nomor Pesanan',
+                'Customer': 'Pelanggan',
+                'Warehouse Location': 'Lokasi Gudang',
+                'Product': 'Produk',
+                'Qty': 'Kuantitas',
+                'Unit Price': 'Harga Satuan',
+                'Discount (%)': 'Diskon (%)',
+                'Subtotal': 'Subtotal',
+                'Untaxed Amount': 'Jumlah Sebelum Pajak',
+                'VAT 11%': 'PPN 11%',
+                'Total Amount': 'Total Tagihan',
+                'Create & Confirm Sales Order': 'Buat & Konfirmasi Sales Order',
+                'Confirm Sales Order': 'Konfirmasi Sales Order',
+                'Validate Delivery': 'Validasi Pengiriman',
+                'Post Invoice': 'Posting Faktur',
+                'Register Payment': 'Catat Pembayaran',
+                'Confirm Purchase Order': 'Konfirmasi Purchase Order',
+                'Validate Receipt': 'Validasi Penerimaan',
+                'Post Vendor Bill': 'Posting Tagihan Vendor',
+                'Execute Transfer': 'Jalankan Transfer Stok',
+                'Process Return & Credit Note': 'Proses Retur & Credit Note',
+                'Complete Treatment': 'Selesaikan Perawatan',
+                'Traceability & Audit Trail': 'Ketertelusuran & Jejak Audit',
+                'No related documents recorded yet.': 'Belum ada dokumen terkait yang tercatat.',
+                'No internal log notes yet.': 'Belum ada catatan internal.',
+                'Add Log Note': 'Tambah Catatan Log'
+            };
+
+            // ID -> EN dictionary when English ('en') is selected
+            const ID_TO_EN = {
+                'Total Opening AR Perusahaan:': 'Company Total Opening AR:',
+                '7 Aplikasi Referensi': '7 Reference Applications',
+                '6 Peran Bisnis': '6 Business Roles',
+                'Akses Terisolasi Divisi': 'Isolated Division Access',
+                'Struktur Likuiditas & Aset': 'Liquidity & Asset Structure',
+                'Komposisi Kas, Stok, Piutang & Utang': 'Cash, Stock, AR & AP Composition',
+                'Kas Bank (1010)': 'Bank Cash (1010)',
+                'Valuasi Persediaan (1200)': 'Inventory Valuation (1200)',
+                'Piutang Usaha (1100)': 'Accounts Receivable (1100)',
+                'Utang Dagang (2100)': 'Accounts Payable (2100)',
+                'Distribusi Ketersediaan Persediaan Produk': 'Product Inventory Availability Distribution',
+                'Unit fisik on hand per kategori & perbandingan antar-gudang': 'Physical on-hand units per category & warehouse comparison',
+                'Main Admin: Matriks & Inspeksi Hak Akses Staf Divisi': 'Main Admin: Staff Division Access & Inspection Matrix',
+                'Sebagai Main Super Admin, Anda memiliki akses penuh ke seluruh modul dan dapat memantau atau menginspeksi alur kerja staf divisi secara spesifik.': 'As Main Super Admin, you have full access to all modules and can monitor or inspect any staff division workflow.',
+                'Divisi & Jabatan:': 'Division & Title:',
+                'Aplikasi Diizinkan:': 'Allowed Apps:',
+                'Shortcut Layar:': 'Screen Shortcuts:',
+                'Akun Aktif Saat Ini': 'Current Active Account',
+                'Beri Akses Lintas Divisi': 'Grant Cross-Division Access',
+                'Tim Penerima': 'Recipient Team',
+                'Durasi Akses Sementara': 'Temporary Access Duration',
+                'Catatan (opsional)': 'Note (optional)',
+                'Modul yang Diberikan': 'Granted Modules',
+                'Beri Akses & Kirim Notifikasi': 'Grant Access & Send Notification',
+                'Hapus Akses': 'Delete Access',
+                'Belum ada alokasi akses lintas divisi yang sedang aktif.': 'No active cross-division access allocations.'
+            };
+
+            const dict = CURRENT_LOCALE === 'id' ? EN_TO_ID : ID_TO_EN;
+            const mainEl = document.querySelector('main');
+            if (!mainEl) return;
+
+            const walker = document.createTreeWalker(mainEl, NodeFilter.SHOW_TEXT, null);
+            const nodes = [];
+            while (walker.nextNode()) {
+                nodes.push(walker.currentNode);
+            }
+            nodes.forEach(function (node) {
+                const raw = node.nodeValue;
+                const trimmed = raw ? raw.trim() : '';
+                if (trimmed && Object.prototype.hasOwnProperty.call(dict, trimmed)) {
+                    node.nodeValue = raw.replace(trimmed, dict[trimmed]);
+                }
+            });
+        })();
+    </script>
 
     @yield('scripts')
 </body>

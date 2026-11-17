@@ -11,6 +11,7 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/', [ErpController::class, 'home'])->name('s01.home');
+Route::post('/switch-locale', [ErpController::class, 'switchLocale'])->name('locale.switch');
 Route::post('/switch-role', [ErpController::class, 'switchRole'])->name('switch.role');
 Route::post('/return-super', [ErpController::class, 'returnToSuperAccount'])->name('return.super');
 Route::post('/reset-baseline', [ErpController::class, 'resetBaseline'])->name('reset.baseline');
@@ -80,9 +81,11 @@ Route::post('/inventory/transfers', [ErpController::class, 'executeTransfer'])->
 Route::get('/sales/returns', [ErpController::class, 'returns'])->name('s15.return');
 Route::post('/sales/returns', [ErpController::class, 'processReturn'])->name('s15.process');
 
-// S-16: Employees dan Skill Matrix
+// S-16: Employees dan Skill Matrix + HR Offboarding / Termination Procedure
 Route::get('/employees', [ErpController::class, 'employees'])->name('s16.employee');
 Route::post('/employees', [ErpController::class, 'createEmployee'])->name('s16.create');
+Route::get('/employees/offboarding', [ErpController::class, 'employeeOffboarding'])->name('s16.offboarding');
+Route::post('/employees/offboarding', [ErpController::class, 'processEmployeeTermination'])->name('s16.terminate');
 
 // S-17: Beauty Treatment Completion
 Route::get('/studio/treatments', [ErpController::class, 'treatments'])->name('s17.treatment');

@@ -215,10 +215,10 @@ class BaselineSeeder extends Seeder
         JournalItem::create(['entry_number' => $entry->entry_number, 'account_code' => '3100', 'debit' => 0, 'credit' => 74832500, 'description' => 'Opening Capital']);
 
         // 9. Employees
-        Employee::create(['id' => 'E001', 'name' => 'Sinta Maharani', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Facial'], 'status' => 'Aktif']);
-        Employee::create(['id' => 'E002', 'name' => 'Rizka Amalia', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Hair Treatment'], 'status' => 'Aktif']);
-        Employee::create(['id' => 'E003', 'name' => 'Gita Lestari', 'job_position' => 'Supervisor', 'department' => 'Studio Bandung', 'skills' => ['Facial', 'Hair Treatment'], 'status' => 'Aktif']);
-        Employee::create(['id' => 'E004', 'name' => 'Fajar Wijaya', 'job_position' => 'Stock Operator', 'department' => 'Gudang Jakarta', 'skills' => ['Stock Handling'], 'status' => 'Aktif']);
+        Employee::create(['id' => 'E001', 'name' => 'Sinta Maharani', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Facial'], 'status' => 'Aktif', 'birthdate' => '1997-04-12', 'phone' => '+62 812-8401-2201', 'address' => 'Jl. Dago Asri No. 14, Coblong, Kota Bandung']);
+        Employee::create(['id' => 'E002', 'name' => 'Rizka Amalia', 'job_position' => 'Beauty Therapist', 'department' => 'Studio Bandung', 'skills' => ['Hair Treatment'], 'status' => 'Aktif', 'birthdate' => '1998-08-23', 'phone' => '+62 813-9210-3302', 'address' => 'Jl. Buah Batu No. 88, Lengkong, Kota Bandung']);
+        Employee::create(['id' => 'E003', 'name' => 'Gita Lestari', 'job_position' => 'Supervisor', 'department' => 'Studio Bandung', 'skills' => ['Facial', 'Hair Treatment'], 'status' => 'Aktif', 'birthdate' => '1994-11-05', 'phone' => '+62 811-2345-4403', 'address' => 'Jl. Setiabudi Regency Blok C-7, Sukasari, Kota Bandung']);
+        Employee::create(['id' => 'E004', 'name' => 'Fajar Wijaya', 'job_position' => 'Stock Operator', 'department' => 'Gudang Jakarta', 'skills' => ['Stock Handling'], 'status' => 'Aktif', 'birthdate' => '1996-02-19', 'phone' => '+62 815-7788-5504', 'address' => 'Jl. Kemang Raya No. 42, Mampang Prapatan, Jakarta Selatan']);
 
         // 10. Beauty Services
         BeautyService::create([

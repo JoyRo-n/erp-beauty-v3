@@ -14,6 +14,10 @@ class Contact extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'name' => \App\Casts\EncryptedString::class,
+        'type' => \App\Casts\EncryptedString::class,
+        'city' => \App\Casts\EncryptedString::class,
+        'payment_terms' => \App\Casts\EncryptedString::class,
         'credit_limit' => 'decimal:2',
         'opening_receivable' => 'decimal:2',
         'opening_payable' => 'decimal:2',

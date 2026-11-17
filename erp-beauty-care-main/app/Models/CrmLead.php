@@ -13,6 +13,11 @@ class CrmLead extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'name' => \App\Casts\EncryptedString::class,
+        'salesperson' => \App\Casts\EncryptedString::class,
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Contact::class, 'customer_id', 'id');

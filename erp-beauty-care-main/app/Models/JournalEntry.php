@@ -15,6 +15,8 @@ class JournalEntry extends Model
 
     protected $casts = [
         'date' => 'date',
+        'reference' => \App\Casts\EncryptedString::class,
+        'posted_by' => \App\Casts\EncryptedString::class,
         'total_debit' => 'decimal:2',
         'total_credit' => 'decimal:2',
         'posted_at' => 'datetime',

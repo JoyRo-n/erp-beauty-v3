@@ -11,6 +11,10 @@ class AccessRequest extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'requester_name' => \App\Casts\EncryptedString::class,
+        'reason' => \App\Casts\EncryptedString::class,
+        'reviewed_by' => \App\Casts\EncryptedString::class,
+        'review_note' => \App\Casts\EncryptedString::class,
         'created_at' => 'datetime',
         'reviewed_at' => 'datetime',
     ];

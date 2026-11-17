@@ -11,6 +11,8 @@ class AccessGrant extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'granted_by' => \App\Casts\EncryptedString::class,
+        'note' => \App\Casts\EncryptedString::class,
         'created_at' => 'datetime',
         'expires_at' => 'datetime',
     ];

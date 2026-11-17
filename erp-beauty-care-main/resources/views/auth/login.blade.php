@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="id">
+@php
+    $isEnLogin = app()->getLocale() === 'en';
+@endphp
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk — ERP PT Arunika Beauty Nusantara (NusaGlow)</title>
+    <title>{{ $isEnLogin ? 'Sign In' : 'Masuk' }} — ERP PT Arunika Beauty Nusantara (NusaGlow)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -50,10 +53,32 @@
             @if(!empty($currentUser))
                 <a href="{{ $returnUrl ?? route('s01.home') }}" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-arrow-left text-[11px]"></i>
-                    <span>Kembali ke {{ $currentUser->role }}</span>
+                    <span>{{ $isEnLogin ? 'Return to ' : 'Kembali ke ' }}{{ $currentUser->role }}</span>
                 </a>
             @endif
-            <div class="flex items-center space-x-2 bg-white/75 border border-pink-200 px-3 py-1 rounded-full shadow-sm">
+            <!-- Language Switcher (ID / EN) -->
+            <form action="{{ route('locale.switch') }}" method="POST" class="inline-flex items-center bg-white/80 border border-pink-200 rounded-lg p-0.5 shadow-sm">
+                @csrf
+                <button
+                    type="submit"
+                    name="locale"
+                    value="id"
+                    class="px-2 py-1 rounded-md text-[11px] font-bold transition {{ !$isEnLogin ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white shadow-xs' : 'text-rose-700 hover:bg-pink-50' }}"
+                    title="Bahasa Indonesia"
+                >
+                    ID
+                </button>
+                <button
+                    type="submit"
+                    name="locale"
+                    value="en"
+                    class="px-2 py-1 rounded-md text-[11px] font-bold transition {{ $isEnLogin ? 'bg-gradient-to-r from-[#EC709F] to-[#D95386] text-white shadow-xs' : 'text-rose-700 hover:bg-pink-50' }}"
+                    title="English"
+                >
+                    EN
+                </button>
+            </form>
+            <div class="hidden sm:flex items-center space-x-2 bg-white/75 border border-pink-200 px-3 py-1 rounded-full shadow-sm">
                 <i class="fa-solid fa-lock text-xs text-rose-500"></i>
                 <span class="font-semibold text-rose-900">Access Control & Security</span>
             </div>
@@ -69,8 +94,8 @@
                 <div class="w-16 h-16 mx-auto rounded-full bg-white/85 border border-pink-200 backdrop-blur flex items-center justify-center text-3xl shadow-sm mb-3">
                     <i class="fa-solid fa-shield-halved text-rose-500"></i>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-rose-950">Portal Masuk Karyawan</h1>
-                <p class="text-xs text-rose-800/85 mt-1">Gunakan email & kata sandi resmi untuk membuka akses modul</p>
+                <h1 class="text-xl font-bold tracking-tight text-rose-950">{{ $isEnLogin ? 'Employee Sign-In Portal' : 'Portal Masuk Karyawan' }}</h1>
+                <p class="text-xs text-rose-800/85 mt-1">{{ $isEnLogin ? 'Use your official email & password to unlock module access' : 'Gunakan email & kata sandi resmi untuk membuka akses modul' }}</p>
             </div>
 
             <!-- Form Content -->
@@ -130,7 +155,7 @@
                     <!-- Email Field -->
                     <div>
                         <label class="block text-xs font-semibold text-rose-900 mb-1.5">
-                            <i class="fa-solid fa-envelope text-rose-400 mr-1.5"></i> Email Karyawan
+                            <i class="fa-solid fa-envelope text-rose-400 mr-1.5"></i> {{ $isEnLogin ? 'Employee Email' : 'Email Karyawan' }}
                         </label>
                         <input 
                             type="email" 
@@ -139,7 +164,7 @@
                             value="{{ old('email', $prefillEmail ?? '') }}" 
                             required 
                             autofocus
-                            placeholder="warehouse@gmail.com" 
+                            placeholder="{{ $isEnLogin ? 'Enter your official account email' : 'Masukkan email akun resmi Anda' }}" 
                             class="w-full text-sm px-4 py-2.5 border border-pink-200 rounded-lg focus:ring-2 focus:ring-[#E879A6] focus:border-[#E879A6] outline-none transition bg-[#FFF8FB] focus:bg-white text-rose-950"
                         >
                         @error('email')
@@ -150,7 +175,7 @@
                     <!-- Password Field -->
                     <div>
                         <label class="block text-xs font-semibold text-rose-900 mb-1.5">
-                            <i class="fa-solid fa-key text-rose-400 mr-1.5"></i> Kata Sandi (Password)
+                            <i class="fa-solid fa-key text-rose-400 mr-1.5"></i> {{ $isEnLogin ? 'Password' : 'Kata Sandi (Password)' }}
                         </label>
                         <div class="relative">
                             <input 
@@ -158,7 +183,7 @@
                                 name="password" 
                                 id="login-password" 
                                 required 
-                                placeholder="Masukkan kata sandi akun" 
+                                placeholder="{{ $isEnLogin ? 'Enter account password' : 'Masukkan kata sandi akun' }}" 
                                 class="w-full text-sm px-4 py-2.5 border border-pink-200 rounded-lg focus:ring-2 focus:ring-[#E879A6] focus:border-[#E879A6] outline-none transition bg-[#FFF8FB] focus:bg-white text-rose-950 pr-10"
                             >
                             <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-rose-400 hover:text-rose-600 focus:outline-none p-1">
@@ -174,7 +199,7 @@
                     <div class="flex items-center justify-between text-xs text-rose-800/80 pt-1">
                         <label class="flex items-center space-x-2 cursor-pointer select-none">
                             <input type="checkbox" name="remember" class="rounded border-pink-300 text-rose-500 focus:ring-rose-400 accent-rose-500">
-                            <span>Ingat sesi saya di perangkat ini</span>
+                            <span>{{ $isEnLogin ? 'Remember my session on this device' : 'Ingat sesi saya di perangkat ini' }}</span>
                         </label>
                     </div>
 
@@ -185,7 +210,7 @@
                         class="w-full odoo-btn-primary font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 text-sm mt-2"
                     >
                         <i class="fa-solid fa-right-to-bracket text-sm"></i>
-                        <span>Buka Kunci & Masuk Dashboard</span>
+                        <span>{{ $isEnLogin ? 'Unlock & Enter Dashboard' : 'Buka Kunci & Masuk Dashboard' }}</span>
                     </button>
                 </form>
             </div>
@@ -193,7 +218,7 @@
             <!-- Card Footer -->
             <div class="p-4 bg-gradient-to-r from-[#FFF5F8] via-[#FADADD]/45 to-[#FFF5F8] border-t border-pink-200 text-center text-xs text-rose-800/85">
                 <i class="fa-solid fa-lock text-emerald-600 mr-1"></i>
-                Setiap admin wajib mengetahui email dan kata sandi akun pribadinya
+                {{ $isEnLogin ? 'Every staff member must sign in with their own personal account email and password' : 'Setiap admin wajib mengetahui email dan kata sandi akun pribadinya' }}
             </div>
 
         </div>

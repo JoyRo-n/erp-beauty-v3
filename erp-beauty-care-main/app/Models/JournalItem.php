@@ -10,6 +10,7 @@ class JournalItem extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'description' => \App\Casts\EncryptedString::class,
         'debit' => 'decimal:2',
         'credit' => 'decimal:2',
     ];

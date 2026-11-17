@@ -14,7 +14,16 @@ class Employee extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'skills' => 'array',
+        'name' => \App\Casts\EncryptedString::class,
+        'job_position' => \App\Casts\EncryptedString::class,
+        'department' => \App\Casts\EncryptedString::class,
+        'skills' => \App\Casts\EncryptedArray::class,
+        'birthdate' => \App\Casts\EncryptedString::class,
+        'phone' => \App\Casts\EncryptedString::class,
+        'address' => \App\Casts\EncryptedString::class,
+        'termination_reason' => \App\Casts\EncryptedString::class,
+        'offboarding_checklist' => \App\Casts\EncryptedArray::class,
+        'terminated_at' => 'datetime',
     ];
 
     public function treatments()

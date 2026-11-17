@@ -89,27 +89,47 @@ class BackNavigationTest extends TestCase
         $this->assertEquals($superRole, Auth::user()->role);
     }
 
-    public function test_top_right_sidebar_switch_terminates_previous_session_for_staff_and_super_roles(): void
+    public function test_top_right_sidebar_switch_only_visible_to_admin_and_isolated_for_sales(): void
     {
-        foreach (['Finance', 'Admin', 'Owner'] as $role) {
-            $user = User::where('role', $role)->firstOrFail();
+        // 1. When logged in as Sales, user cannot see other people's names, emails, division names, or account switch buttons
+        $salesUser = User::where('role', 'Sales')->firstOrFail();
+        $salesHome = $this->actingAs($salesUser)->get('/');
+        $salesHome->assertStatus(200);
+        $salesHome->assertSee('Kevin Mahendra');
+        $salesHome->assertDontSee('Pilih Akun / Peran');
+        $salesHome->assertDontSee('selectRole(', false);
+        $salesHome->assertDontSee('Wahyu Saputra');
+        $salesHome->assertDontSee('Nanda Kusuma');
+        $salesHome->assertDontSee('Taufik Rahman');
+        $salesHome->assertDontSee('Laras Kirana');
+        $salesHome->assertDontSee('Ratih Widya');
+        $salesHome->assertDontSee('warehouse@gmail.com');
+        $salesHome->assertDontSee('finance@gmail.com');
+        $salesHome->assertDontSee('purchasing@gmail.com');
+        $salesHome->assertDontSee('studio@gmail.com');
+        $salesHome->assertDontSee('owner@gmail.com');
+        $salesHome->assertDontSee('admin@gmail.com');
 
-            // User chooses another account from the top-right sidebar (no inspect flag) and confirms "Log Out"
-            $switchResponse = $this->actingAs($user)
-                ->from('/')
-                ->post('/switch-role', ['role' => 'Sales', '_browser_flow' => 1]);
+        // If Sales posts to /switch-role, session is terminated to plain /login without pre-selecting another division's account
+        $salesSwitch = $this->actingAs($salesUser)
+            ->from('/')
+            ->post('/switch-role', ['role' => 'Finance', '_browser_flow' => 1]);
+        $salesSwitch->assertRedirect(route('login'));
+        $this->assertGuest();
 
-            $switchResponse->assertRedirect(route('login', ['role' => 'Sales']));
-            $this->assertGuest();
+        // 2. Master Admin retains the full account switcher in the top-right sidebar
+        $adminUser = User::where('role', 'Admin')->firstOrFail();
+        $adminHome = $this->actingAs($adminUser)->get('/');
+        $adminHome->assertStatus(200);
+        $adminHome->assertSee('Pilih Akun / Peran (Master Admin)');
+        $adminHome->assertSee('selectRole(', false);
 
-            // Login screen loads cleanly with Sales email pre-filled and NO active previous session banner
-            $loginPage = $this->get('/login?role=Sales');
-            $loginPage->assertStatus(200);
-            $loginPage->assertSee('sales@gmail.com');
-            $loginPage->assertDontSee('Mode Inspeksi:');
-            $loginPage->assertDontSee('Kembali ke');
-            $this->assertGuest();
-        }
+        $switchResponse = $this->actingAs($adminUser)
+            ->from('/')
+            ->post('/switch-role', ['role' => 'Sales', '_browser_flow' => 1]);
+
+        $switchResponse->assertRedirect(route('login', ['role' => 'Sales']));
+        $this->assertGuest();
     }
 
     public function test_account_switch_logout_confirmation_modal_rendered(): void

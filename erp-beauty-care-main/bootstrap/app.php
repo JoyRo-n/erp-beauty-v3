@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\PreventBackHistoryCache;
+use App\Http\Middleware\SetLocaleMiddleware;
 use App\Services\RoleAccessService;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
+        $middleware->appendToGroup('web', SetLocaleMiddleware::class);
         $middleware->appendToGroup('web', PreventBackHistoryCache::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {

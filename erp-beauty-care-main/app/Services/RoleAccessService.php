@@ -12,6 +12,7 @@ class RoleAccessService
      */
     public static function getProfiles(): array
     {
+        $isEn = app()->getLocale() === 'en';
         return [
             'Admin' => [
                 'name' => 'Master Administrator',
@@ -19,9 +20,9 @@ class RoleAccessService
                 'role_title' => 'Master Super Admin',
                 'avatar_color' => 'bg-rose-500',
                 'badge_color' => 'bg-pink-100 text-rose-900 border-pink-300',
-                'dept' => 'Divisi Sistem & Seluruh Modul',
-                'access' => 'Semua Modul & Akses Penuh (Superuser)',
-                'description' => 'Memiliki hak akses menyeluruh ke seluruh sistem ERP, dapat mengaudit dan menginspeksi hak akses setiap staf.',
+                'dept' => $isEn ? 'System & All Modules Division' : 'Divisi Sistem & Seluruh Modul',
+                'access' => $isEn ? 'All Modules & Full Access (Superuser)' : 'Semua Modul & Akses Penuh (Superuser)',
+                'description' => $isEn ? 'Full superuser access to all ERP modules, audit logs, and staff permission inspection.' : 'Memiliki hak akses menyeluruh ke seluruh sistem ERP, dapat mengaudit dan menginspeksi hak akses setiap staf.',
             ],
             'Owner' => [
                 'name' => 'Ratih Widya',
@@ -29,9 +30,9 @@ class RoleAccessService
                 'role_title' => 'Managing Director / Owner',
                 'avatar_color' => 'bg-fuchsia-500',
                 'badge_color' => 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300',
-                'dept' => 'Kantor Eksekutif / Manajemen',
-                'access' => 'Keuangan Bisnis, Profitabilitas, Kas, Piutang/Utang & Buku Besar',
-                'description' => 'Memantau kesehatan finansial bisnis, laporan laba rugi (profit & COGS), arus kas/bank, eksposur kredit, faktur, tagihan, dan buku besar.',
+                'dept' => $isEn ? 'Executive / Management Office' : 'Kantor Eksekutif / Manajemen',
+                'access' => $isEn ? 'Business Finance, Profitability, Cash, AR/AP & General Ledger' : 'Keuangan Bisnis, Profitabilitas, Kas, Piutang/Utang & Buku Besar',
+                'description' => $isEn ? 'Monitors financial health, profit & COGS, cash/bank flow, credit exposure, invoices, bills, and general ledger.' : 'Memantau kesehatan finansial bisnis, laporan laba rugi (profit & COGS), arus kas/bank, eksposur kredit, faktur, tagihan, dan buku besar.',
             ],
             'Sales' => [
                 'name' => 'Kevin Mahendra',
@@ -39,9 +40,9 @@ class RoleAccessService
                 'role_title' => 'Sales Representative',
                 'avatar_color' => 'bg-pink-500',
                 'badge_color' => 'bg-pink-100 text-rose-800 border-pink-300',
-                'dept' => 'Divisi Penjualan & CRM',
-                'access' => 'Sales, CRM, Pelanggan, Produk & Cek Stok',
-                'description' => 'Mengelola prospek pelanggan, penawaran harga (Quotation), Sales Order, dan pemantauan stok tersedia.',
+                'dept' => $isEn ? 'Sales & CRM Division' : 'Divisi Penjualan & CRM',
+                'access' => $isEn ? 'Sales, CRM, Customers, Products & Stock Check' : 'Sales, CRM, Pelanggan, Produk & Cek Stok',
+                'description' => $isEn ? 'Manages customer leads, quotations, sales orders, and available stock checks.' : 'Mengelola prospek pelanggan, penawaran harga (Quotation), Sales Order, dan pemantauan stok tersedia.',
             ],
             'Warehouse' => [
                 'name' => 'Wahyu Saputra',
@@ -49,9 +50,9 @@ class RoleAccessService
                 'role_title' => 'Warehouse Specialist',
                 'avatar_color' => 'bg-amber-600',
                 'badge_color' => 'bg-amber-100 text-amber-800 border-amber-300',
-                'dept' => 'Divisi Gudang & Logistik',
-                'access' => 'Stok, Pengiriman, Penerimaan, Transfer & Retur',
-                'description' => 'Mengelola fisik persediaan, reservasi stok, validasi surat jalan (DO), penerimaan barang, mutasi lokasi, dan inspeksi retur.',
+                'dept' => $isEn ? 'Warehouse & Logistics Division' : 'Divisi Gudang & Logistik',
+                'access' => $isEn ? 'Stock, Deliveries, Receipts, Transfers & Returns' : 'Stok, Pengiriman, Penerimaan, Transfer & Retur',
+                'description' => $isEn ? 'Manages physical stock, reservations, delivery validation (DO), purchase receipts, transfers, and return inspections.' : 'Mengelola fisik persediaan, reservasi stok, validasi surat jalan (DO), penerimaan barang, mutasi lokasi, dan inspeksi retur.',
             ],
             'Finance' => [
                 'name' => 'Nanda Kusuma',
@@ -59,9 +60,9 @@ class RoleAccessService
                 'role_title' => 'Finance & Accounting Head',
                 'avatar_color' => 'bg-emerald-600',
                 'badge_color' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                'dept' => 'Divisi Keuangan & Akuntansi',
-                'access' => 'Buku Besar, Faktur, Tagihan, Pembayaran & Dashboard',
-                'description' => 'Mengelola General Ledger, pembukuan jurnal debit-kredit, faktur pelanggan, tagihan vendor (3-way match), kas/bank, dan audit.',
+                'dept' => $isEn ? 'Finance & Accounting Division' : 'Divisi Keuangan & Akuntansi',
+                'access' => $isEn ? 'General Ledger, Invoices, Bills, Payments & Dashboard' : 'Buku Besar, Faktur, Tagihan, Pembayaran & Dashboard',
+                'description' => $isEn ? 'Manages General Ledger, double-entry journals, customer invoices, vendor bills (3-way match), bank/cash, and audits.' : 'Mengelola General Ledger, pembukuan jurnal debit-kredit, faktur pelanggan, tagihan vendor (3-way match), kas/bank, dan audit.',
             ],
             'Purchasing' => [
                 'name' => 'Taufik Rahman',
@@ -69,9 +70,9 @@ class RoleAccessService
                 'role_title' => 'Purchasing Officer',
                 'avatar_color' => 'bg-blue-600',
                 'badge_color' => 'bg-blue-100 text-blue-800 border-blue-300',
-                'dept' => 'Divisi Pengadaan & Vendor',
-                'access' => 'Purchase Orders, RFQ & Tinjauan Tagihan Vendor',
-                'description' => 'Mengelola permintaan penawaran (RFQ), konfirmasi pesanan pembelian (PO), dan pemantauan tiga arah tagihan pemasok.',
+                'dept' => $isEn ? 'Procurement & Vendor Division' : 'Divisi Pengadaan & Vendor',
+                'access' => $isEn ? 'Purchase Orders, RFQ & Vendor Bill Review' : 'Purchase Orders, RFQ & Tinjauan Tagihan Vendor',
+                'description' => $isEn ? 'Manages requests for quotation (RFQ), purchase order confirmation (PO), and 3-way match vendor bill monitoring.' : 'Mengelola permintaan penawaran (RFQ), konfirmasi pesanan pembelian (PO), dan pemantauan tiga arah tagihan pemasok.',
             ],
             'Studio' => [
                 'name' => 'Laras Kirana',
@@ -79,9 +80,9 @@ class RoleAccessService
                 'role_title' => 'Studio Therapist & Operations',
                 'avatar_color' => 'bg-rose-600',
                 'badge_color' => 'bg-rose-100 text-rose-800 border-rose-300',
-                'dept' => 'Operasional Glow Studio Bandung',
-                'access' => 'Data Karyawan, Skill & Treatment Salon',
-                'description' => 'Mengelola jadwal terapis salon, penugasan keahlian facial, dan penyelesaian layanan kecantikan konsumen.',
+                'dept' => $isEn ? 'Bandung Glow Studio Operations' : 'Operasional Glow Studio Bandung',
+                'access' => $isEn ? 'Employees, Therapist Skills & Salon Treatments' : 'Data Karyawan, Skill & Treatment Salon',
+                'description' => $isEn ? 'Manages salon therapist schedules, facial skill certifications, and beauty treatment completions.' : 'Mengelola jadwal terapis salon, penugasan keahlian facial, dan penyelesaian layanan kecantikan konsumen.',
             ],
         ];
     }
@@ -100,11 +101,12 @@ class RoleAccessService
      */
     public static function getAllApps(): array
     {
+        $isId = app()->getLocale() === 'id';
         return [
             'sales' => [
                 'id' => 'sales',
                 'title' => 'Sales',
-                'subtitle' => 'Quotations & Sales Orders',
+                'subtitle' => $isId ? 'Penawaran & Sales Order' : 'Quotations & Sales Orders',
                 'route' => 's05.sales',
                 'icon' => 'fa-solid fa-chart-line',
                 'color' => 'pink',
@@ -116,7 +118,7 @@ class RoleAccessService
             'crm' => [
                 'id' => 'crm',
                 'title' => 'CRM',
-                'subtitle' => 'Lead Pipeline & Conversion',
+                'subtitle' => $isId ? 'Pipeline Prospek & Konversi' : 'Lead Pipeline & Conversion',
                 'route' => 's04.crm',
                 'icon' => 'fa-solid fa-bullseye',
                 'color' => 'fuchsia',
@@ -128,7 +130,7 @@ class RoleAccessService
             'purchase' => [
                 'id' => 'purchase',
                 'title' => 'Purchase',
-                'subtitle' => 'PO, RFQ & Vendors',
+                'subtitle' => $isId ? 'PO, RFQ & Pemasok' : 'PO, RFQ & Vendors',
                 'route' => 's10.purchase',
                 'icon' => 'fa-solid fa-cart-shopping',
                 'color' => 'blue',
@@ -140,7 +142,7 @@ class RoleAccessService
             'inventory' => [
                 'id' => 'inventory',
                 'title' => 'Inventory',
-                'subtitle' => 'Stock, Deliveries & Receipts',
+                'subtitle' => $isId ? 'Stok, Pengiriman & Penerimaan' : 'Stock, Deliveries & Receipts',
                 'route' => 's06.stock',
                 'icon' => 'fa-solid fa-warehouse',
                 'color' => 'amber',
@@ -152,7 +154,7 @@ class RoleAccessService
             'accounting' => [
                 'id' => 'accounting',
                 'title' => 'Accounting',
-                'subtitle' => 'General Ledger, Payments & Dashboard',
+                'subtitle' => $isId ? 'Buku Besar, Pembayaran & Dashboard' : 'General Ledger, Payments & Dashboard',
                 'route' => 's13.ledger',
                 'icon' => 'fa-solid fa-book-journal-whills',
                 'color' => 'emerald',
@@ -164,7 +166,7 @@ class RoleAccessService
             'invoicing' => [
                 'id' => 'invoicing',
                 'title' => 'Invoicing',
-                'subtitle' => 'Customer Invoices & Vendor Bills',
+                'subtitle' => $isId ? 'Faktur Pelanggan & Tagihan Vendor' : 'Customer Invoices & Vendor Bills',
                 'route' => 's08.invoice',
                 'icon' => 'fa-solid fa-file-invoice-dollar',
                 'color' => 'teal',
@@ -176,7 +178,7 @@ class RoleAccessService
             'employee' => [
                 'id' => 'employee',
                 'title' => 'Employees',
-                'subtitle' => 'Therapist Skills & Treatments',
+                'subtitle' => $isId ? 'Keahlian Terapis & Perawatan' : 'Therapist Skills & Treatments',
                 'route' => 's16.employee',
                 'icon' => 'fa-solid fa-users',
                 'color' => 'rose',
@@ -350,8 +352,9 @@ class RoleAccessService
      */
     public static function getAllShortcuts(): array
     {
+        $isEn = app()->getLocale() === 'en';
         return [
-            's01' => ['id' => 's01', 'code' => 'S-01', 'title' => 'Beranda & App Switcher', 'route' => 's01.home', 'roles' => ['All']],
+            's01' => ['id' => 's01', 'code' => 'S-01', 'title' => $isEn ? 'Home & App Switcher' : 'Beranda & App Switcher', 'route' => 's01.home', 'roles' => ['All']],
             's02' => ['id' => 's02', 'code' => 'S-02', 'title' => 'Form Customer & Credit', 'route' => 's02.customer', 'roles' => ['Sales', 'Finance', 'Owner', 'Admin']],
             's03' => ['id' => 's03', 'code' => 'S-03', 'title' => 'Product & Variant SKU', 'route' => 's03.product', 'roles' => ['Sales', 'Warehouse', 'Admin']],
             's04' => ['id' => 's04', 'code' => 'S-04', 'title' => 'CRM Pipeline Kanban', 'route' => 's04.crm', 'roles' => ['Sales', 'Admin']],
