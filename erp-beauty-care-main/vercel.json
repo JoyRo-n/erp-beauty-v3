@@ -3,7 +3,8 @@
     "framework": null,
     "functions": {
         "api/*.php": {
-            "runtime": "vercel-php@0.7.3"
+            "runtime": "vercel-php@0.7.3",
+            "includeFiles": "database/**"
         }
     },
     "routes": [
@@ -34,6 +35,11 @@
         "SESSION_DRIVER": "cookie",
         "CACHE_STORE": "array",
         "LOG_CHANNEL": "stderr",
-        "VIEW_COMPILED_PATH": "/tmp/storage/framework/views"
+        "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
+        "APP_PACKAGES_CACHE": "/tmp/bootstrap-cache/packages.php",
+        "APP_SERVICES_CACHE": "/tmp/bootstrap-cache/services.php",
+        "APP_CONFIG_CACHE": "/tmp/bootstrap-cache/config.php",
+        "APP_ROUTES_CACHE": "/tmp/bootstrap-cache/routes.php",
+        "APP_EVENTS_CACHE": "/tmp/bootstrap-cache/events.php"
     }
 }
